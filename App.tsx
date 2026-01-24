@@ -1,20 +1,30 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+/**
+ * App Entry Point
+ *
+ * L'app è strutturata come segue:
+ * - KaraokeProvider: context globale per stato applicativo
+ * - AppNavigator: gestione navigazione tra screen
+ *
+ * Il socket viene inizializzato nella JoinScreen, non qui.
+ * Questo perché:
+ * 1. La connessione deve avvenire prima del join
+ * 2. Il provider non deve avere side-effect di rete
+ * 3. La JoinScreen gestisce esplicitamente il lifecycle
+ */
+
+import React from "react";
+import { StatusBar } from "expo-status-bar";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { KaraokeProvider } from "./src/context";
+import { AppNavigator } from "./src/navigation";
 
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <SafeAreaProvider>
+      <KaraokeProvider>
+        <StatusBar style="auto" />
+        <AppNavigator />
+      </KaraokeProvider>
+    </SafeAreaProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
