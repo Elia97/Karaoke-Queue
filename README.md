@@ -57,6 +57,9 @@ src/
 │   └── NowPlayingScreen.tsx  # Player
 │
 ├── services/             # Servizi
+│   ├── index.ts              # Barrel export
+│   ├── logger.service.ts     # Console logging strutturato
+│   ├── socket.parsers.ts     # Normalizzazione dati server
 │   └── socket.service.ts     # Singleton Socket.IO
 │
 └── types/                # TypeScript types
@@ -147,6 +150,16 @@ Ogni evento server ha un'action corrispondente:
 - `ERROR`
 - `CLEAR_ERROR`
 - `RESET`
+
+### Data Parsing (socket.parsers.ts)
+
+Il server potrebbe inviare dati in formati inconsistenti (es: booleani come stringhe `"true"`/`"false"`). Il modulo `socket.parsers.ts` normalizza tutti i payload ricevuti:
+
+- `parseUser()` → Normalizza campi User (isConnected: boolean)
+- `parseSession()` → Normalizza campi Session
+- `parseQueueItem()` → Normalizza campi QueueItem (position: number | null)
+
+Questi parser sono applicati in `KaraokeContext.tsx` su tutti gli eventi socket prima del dispatch al reducer.
 
 ## Flusso Completo
 
@@ -246,8 +259,18 @@ Ogni evento server ha un'action corrispondente:
 ### Variabili Ambiente
 
 ```env
+# URL del server Socket.IO
 EXPO_PUBLIC_SOCKET_URL=http://localhost:3000
+
+# PIN per sbloccare modalità conduttore
+EXPO_PUBLIC_HOST_PIN=1234
 ```
+
+### Accesso Modalità Conduttore
+
+**Web:** Aggiungi `?host=PIN` all'URL (es: `http://localhost:8081?host=1234`)
+
+**Mobile (Expo Go):** Tocca 5 volte il titolo "Karaoke" per mostrare l'input PIN
 
 ### Sviluppo
 
@@ -258,11 +281,17 @@ npm install
 # Avvia Expo
 npm start
 
+# Expo con tunnel (per test mobile da Internet)
+npm run tunnel
+
 # iOS Simulator
 npm run ios
 
 # Android Emulator
 npm run android
+
+# Web browser
+npm run web
 ```
 
 ## Assunzioni e Trade-off

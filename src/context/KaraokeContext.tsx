@@ -44,6 +44,11 @@ import {
   SessionEndedPayload,
 } from "../types";
 import { socketService, logger } from "../services";
+import {
+  parseUser,
+  parseSession,
+  parseQueueItem,
+} from "../services/socket.parsers";
 
 // ============================================================================
 // STATE
@@ -315,34 +320,64 @@ export function KaraokeProvider({ children }: KaraokeProviderProps) {
     logger.debug("socket", "Registering event listeners...");
 
     // Registra tutti i listener per eventi server
-    socket.on("welcome", (payload) => {
+    socket.on("welcome", (payload: any) => {
       logger.socketIn("welcome", payload);
-      dispatch({ type: "WELCOME", payload });
+      const parsedPayload: WelcomePayload = {
+        ...payload,
+        user: parseUser(payload.user),
+      };
+      dispatch({ type: "WELCOME", payload: parsedPayload });
     });
 
-    socket.on("sessionState", (payload) => {
+    socket.on("sessionState", (payload: any) => {
       logger.socketIn("sessionState", payload);
-      dispatch({ type: "SESSION_STATE", payload });
+      const parsedPayload: SessionStatePayload = {
+        ...payload,
+        session: parseSession(payload.session),
+        users: payload.users.map(parseUser),
+        queue: payload.queue.map(parseQueueItem),
+        currentSong: payload.currentSong
+          ? parseQueueItem(payload.currentSong)
+          : null,
+      };
+      dispatch({ type: "SESSION_STATE", payload: parsedPayload });
     });
 
-    socket.on("queueUpdated", (payload) => {
+    socket.on("queueUpdated", (payload: any) => {
       logger.socketIn("queueUpdated", payload);
-      dispatch({ type: "QUEUE_UPDATED", payload });
+      const parsedPayload: QueueUpdatedPayload = {
+        ...payload,
+        queue: payload.queue.map(parseQueueItem),
+      };
+      dispatch({ type: "QUEUE_UPDATED", payload: parsedPayload });
     });
 
-    socket.on("nowPlaying", (payload) => {
+    socket.on("nowPlaying", (payload: any) => {
       logger.socketIn("nowPlaying", payload);
-      dispatch({ type: "NOW_PLAYING", payload });
+      const parsedPayload: NowPlayingPayload = {
+        ...payload,
+        item: parseQueueItem(payload.item),
+        nextUp: payload.nextUp ? parseQueueItem(payload.nextUp) : null,
+      };
+      dispatch({ type: "NOW_PLAYING", payload: parsedPayload });
     });
 
-    socket.on("prepare", (payload) => {
+    socket.on("prepare", (payload: any) => {
       logger.socketIn("prepare", payload);
-      dispatch({ type: "PREPARE", payload });
+      const parsedPayload: PreparePayload = {
+        ...payload,
+        item: parseQueueItem(payload.item),
+      };
+      dispatch({ type: "PREPARE", payload: parsedPayload });
     });
 
-    socket.on("userJoined", (payload) => {
+    socket.on("userJoined", (payload: any) => {
       logger.socketIn("userJoined", payload);
-      dispatch({ type: "USER_JOINED", payload });
+      const parsedPayload: UserJoinedPayload = {
+        ...payload,
+        user: parseUser(payload.user),
+      };
+      dispatch({ type: "USER_JOINED", payload: parsedPayload });
     });
 
     socket.on("userLeft", (payload) => {

@@ -11,9 +11,10 @@
  * 3. Entra nella sessione come PARTICIPANT
  *
  * FLUSSO CONDUTTORE:
- * 1. Attiva "Sono il conduttore"
- * 2. Inserisce nickname
- * 3. Crea nuova sessione come HOST
+ * 1. Attiva "Sono il conduttore" (tap 5x sull'emoji 🎤 per mostrare PIN input)
+ * 2. Inserisce PIN conduttore
+ * 3. Inserisce nickname
+ * 4. Crea nuova sessione come HOST
  */
 
 import React, { useState, useEffect } from "react";
@@ -25,6 +26,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  TouchableOpacity,
+  Alert,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -53,20 +56,59 @@ export function JoinScreen() {
   const [isJoining, setIsJoining] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
 
+  // Secret PIN input for mobile
+  const [showPinInput, setShowPinInput] = useState(false);
+  const [hostPin, setHostPin] = useState("");
+  const [secretTapCount, setSecretTapCount] = useState(0);
+  const [lastTapTime, setLastTapTime] = useState(0);
+
+  const expectedPin = process.env.EXPO_PUBLIC_HOST_PIN || "1234";
+
   // Verifica se il PIN host è nell'URL (solo web)
   useEffect(() => {
     if (typeof window !== "undefined" && window.location) {
       const urlParams = new URLSearchParams(window.location.search);
-      const hostPin = urlParams.get("host");
-      const expectedPin = process.env.EXPO_PUBLIC_HOST_PIN || "1234";
+      const urlHostPin = urlParams.get("host");
 
-      if (hostPin && hostPin === expectedPin) {
+      if (urlHostPin && urlHostPin === expectedPin) {
         setIsHostUnlocked(true);
         setIsHostMode(true);
         console.log("[JoinScreen] Host mode unlocked via PIN");
       }
     }
   }, []);
+
+  // Handle secret tap on title emoji to reveal PIN input
+  const handleSecretTap = () => {
+    const now = Date.now();
+    // Reset counter if more than 2 seconds since last tap
+    if (now - lastTapTime > 2000) {
+      setSecretTapCount(1);
+    } else {
+      setSecretTapCount((prev) => prev + 1);
+    }
+    setLastTapTime(now);
+
+    // After 5 taps, show PIN input
+    if (secretTapCount >= 4) {
+      setShowPinInput(true);
+      setSecretTapCount(0);
+    }
+  };
+
+  // Validate PIN and unlock host mode
+  const handlePinSubmit = () => {
+    if (hostPin === expectedPin) {
+      setIsHostUnlocked(true);
+      setIsHostMode(true);
+      setShowPinInput(false);
+      setHostPin("");
+      console.log("[JoinScreen] Host mode unlocked via PIN input");
+    } else {
+      Alert.alert("PIN errato", "Il PIN inserito non è corretto.");
+      setHostPin("");
+    }
+  };
 
   // Reset dello stato quando si arriva su questa schermata
   useEffect(() => {
@@ -147,13 +189,48 @@ export function JoinScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.header}>
-          <Text style={styles.title}>🎤 Karaoke</Text>
+          <TouchableOpacity onPress={handleSecretTap} activeOpacity={0.8}>
+            <Text style={styles.title}>Karaoke</Text>
+          </TouchableOpacity>
           <Text style={styles.subtitle}>
             {isHostMode
               ? "Crea una sessione per i tuoi amici!"
               : "Entra e canta con i tuoi amici!"}
           </Text>
         </View>
+
+        {/* Hidden PIN input - appears after 5 taps on title */}
+        {showPinInput && !isHostUnlocked && (
+          <View style={styles.pinContainer}>
+            <Text style={styles.pinLabel}>🔐 Inserisci PIN Conduttore</Text>
+            <TextInput
+              style={styles.pinInput}
+              placeholder="PIN"
+              value={hostPin}
+              onChangeText={setHostPin}
+              keyboardType="number-pad"
+              secureTextEntry
+              maxLength={6}
+              autoFocus
+            />
+            <View style={styles.pinButtons}>
+              <Button
+                title="Annulla"
+                onPress={() => {
+                  setShowPinInput(false);
+                  setHostPin("");
+                }}
+                style={styles.pinCancelButton}
+              />
+              <Button
+                title="Conferma"
+                onPress={handlePinSubmit}
+                disabled={hostPin.length === 0}
+                style={styles.pinConfirmButton}
+              />
+            </View>
+          </View>
+        )}
 
         <ErrorBanner />
 
@@ -248,10 +325,13 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     padding: 24,
+    maxWidth: 768,
+    width: "100%",
+    marginHorizontal: "auto",
   },
   header: {
     alignItems: "center",
-    marginTop: 40,
+    marginTop: 80,
     marginBottom: 24,
   },
   title: {
@@ -260,42 +340,9 @@ const styles = StyleSheet.create({
     color: "#111827",
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 18,
     color: "#6b7280",
-    marginTop: 8,
     textAlign: "center",
-  },
-  hostToggle: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  hostToggleContent: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  hostToggleIcon: {
-    fontSize: 28,
-    marginRight: 12,
-  },
-  hostToggleText: {
-    flex: 1,
-  },
-  hostToggleTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#374151",
-  },
-  hostToggleHint: {
-    fontSize: 12,
-    color: "#9ca3af",
-    marginTop: 2,
   },
   hostBadge: {
     flexDirection: "row",
@@ -379,5 +426,46 @@ const styles = StyleSheet.create({
     color: "#9ca3af",
     marginTop: 20,
     fontStyle: "italic",
+  },
+  // PIN input styles
+  pinContainer: {
+    backgroundColor: "#ede9fe",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 2,
+    borderColor: "#8b5cf6",
+  },
+  pinLabel: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#5b21b6",
+    marginBottom: 12,
+    textAlign: "center",
+  },
+  pinInput: {
+    borderWidth: 1,
+    borderColor: "#c4b5fd",
+    borderRadius: 8,
+    padding: 14,
+    fontSize: 20,
+    backgroundColor: "#fff",
+    textAlign: "center",
+    letterSpacing: 8,
+    marginBottom: 12,
+  },
+  pinButtons: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  pinCancelButton: {
+    flex: 1,
+    color: "#000",
+    backgroundColor: "#9ca3af",
+  },
+  pinConfirmButton: {
+    flex: 1,
+    color: "#000",
+    backgroundColor: "#8b5cf6",
   },
 });
