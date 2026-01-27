@@ -24,6 +24,7 @@ interface UseSessionReturn {
   sessionStatus: SessionStatus | null;
   isSessionActive: boolean;
   isSessionWaiting: boolean;
+  isSessionPaused: boolean;
   isSessionEnded: boolean;
 
   // Utenti
@@ -46,6 +47,7 @@ export function useSession(): UseSessionReturn {
     const sessStatus = session?.status ?? null;
     const isSessionActive = session?.status === SessionStatus.ACTIVE;
     const isSessionWaiting = session?.status === SessionStatus.WAITING;
+    const isSessionPaused = session?.status === SessionStatus.PAUSED;
     const isSessionEnded =
       session?.status === SessionStatus.ENDED || sessionEndedReason !== null;
 
@@ -55,6 +57,7 @@ export function useSession(): UseSessionReturn {
       sessionStatus: sessStatus,
       isSessionActive,
       isSessionWaiting,
+      isSessionPaused,
       isSessionEnded,
     };
   }, [user, session, sessionEndedReason]);
@@ -71,6 +74,7 @@ export function useSession(): UseSessionReturn {
     sessionStatus: derived.sessionStatus,
     isSessionActive: derived.isSessionActive,
     isSessionWaiting: derived.isSessionWaiting,
+    isSessionPaused: derived.isSessionPaused,
     isSessionEnded: derived.isSessionEnded,
 
     // Utenti

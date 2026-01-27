@@ -44,9 +44,11 @@ export function LobbyScreen() {
     sessionId,
     sessionEndedReason,
     isSessionWaiting,
+    isSessionPaused,
   } = useSession();
   const { hasCurrentSong } = useNowPlaying();
-  const { connectionStatus, endSession } = useSocket();
+  const { connectionStatus, endSession, pauseSession, resumeSession } =
+    useSocket();
 
   // Se la sessione è terminata, torna a Join
   useEffect(() => {
@@ -119,10 +121,20 @@ export function LobbyScreen() {
         return "⏳ In attesa";
       case SessionStatus.ACTIVE:
         return "🟢 Attiva";
+      case SessionStatus.PAUSED:
+        return "⏸️ In pausa";
       case SessionStatus.ENDED:
         return "⏹️ Terminata";
       default:
         return session?.status ?? "Caricamento...";
+    }
+  };
+
+  const handlePauseResume = () => {
+    if (isSessionPaused) {
+      resumeSession();
+    } else {
+      pauseSession();
     }
   };
 
@@ -215,14 +227,24 @@ export function LobbyScreen() {
             )}
           </View>
 
-          {/* Bottone termina sessione - solo host */}
+          {/* Bottoni controllo sessione - solo host */}
           {isHost && (
-            <Button
-              title="⏹️ Termina sessione"
-              onPress={handleEndSession}
-              variant="danger"
-              style={styles.endSessionButton}
-            />
+            <View style={styles.hostControls}>
+              <Button
+                title={
+                  isSessionPaused ? "▶️ Riprendi sessione" : "⏸️ Pausa sessione"
+                }
+                onPress={handlePauseResume}
+                variant="secondary"
+                style={styles.pauseButton}
+              />
+              <Button
+                title="⏹️ Termina sessione"
+                onPress={handleEndSession}
+                variant="danger"
+                style={styles.endSessionButton}
+              />
+            </View>
           )}
         </View>
       </View>
@@ -351,7 +373,14 @@ const styles = StyleSheet.create({
   actionButton: {
     flex: 1,
   },
-  endSessionButton: {
+  hostControls: {
     marginTop: spacing.md,
+    gap: spacing.sm,
+  },
+  pauseButton: {
+    // Standard styling
+  },
+  endSessionButton: {
+    // Danger button
   },
 });
