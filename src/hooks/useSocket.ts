@@ -34,6 +34,8 @@ interface UseSocketReturn {
 
   // Comandi host (HOST)
   nextSong: () => void;
+  pauseSession: () => void;
+  resumeSession: () => void;
   endSession: () => void;
 }
 
@@ -77,7 +79,13 @@ export function useSocket(): UseSocketReturn {
     socketService.nextSong();
   }, []);
 
-  // pauseSession e resumeSession rimossi - non implementati nel server
+  const pauseSession = useCallback(() => {
+    socketService.pauseSession();
+  }, []);
+
+  const resumeSession = useCallback(() => {
+    socketService.resumeSession();
+  }, []);
 
   const endSession = useCallback(() => {
     socketService.endSession();
@@ -98,6 +106,8 @@ export function useSocket(): UseSocketReturn {
     requestSong,
     removeSong,
     nextSong,
+    pauseSession,
+    resumeSession,
     endSession,
   };
 }

@@ -23,6 +23,7 @@ export enum UserRole {
 export enum SessionStatus {
   WAITING = "waiting",
   ACTIVE = "active",
+  PAUSED = "paused",
   ENDED = "ended",
 }
 
@@ -174,6 +175,22 @@ export interface ServerErrorPayload extends BaseEventPayload {
 }
 
 /**
+ * Evento "sessionPaused" - sessione messa in pausa.
+ */
+export interface SessionPausedPayload extends BaseEventPayload {
+  pausedAt: string;
+  message: string;
+}
+
+/**
+ * Evento "sessionResumed" - sessione ripresa.
+ */
+export interface SessionResumedPayload extends BaseEventPayload {
+  session: Session;
+  message: string;
+}
+
+/**
  * Mappa eventi server → payload
  */
 export interface ServerToClientEvents {
@@ -185,6 +202,8 @@ export interface ServerToClientEvents {
   userJoined: (payload: UserJoinedPayload) => void;
   userLeft: (payload: UserLeftPayload) => void;
   sessionEnded: (payload: SessionEndedPayload) => void;
+  sessionPaused: (payload: SessionPausedPayload) => void;
+  sessionResumed: (payload: SessionResumedPayload) => void;
   error: (payload: ServerErrorPayload) => void;
 }
 

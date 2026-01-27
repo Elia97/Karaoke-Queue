@@ -42,6 +42,9 @@ import {
   UserJoinedPayload,
   UserLeftPayload,
   SessionEndedPayload,
+  SessionPausedPayload,
+  SessionResumedPayload,
+  SessionStatus,
 } from "../types";
 import { socketService, logger } from "../services";
 import {
@@ -96,6 +99,8 @@ type KaraokeAction =
   | { type: "USER_JOINED"; payload: UserJoinedPayload }
   | { type: "USER_LEFT"; payload: UserLeftPayload }
   | { type: "SESSION_ENDED"; payload: SessionEndedPayload }
+  | { type: "SESSION_PAUSED"; payload: SessionPausedPayload }
+  | { type: "SESSION_RESUMED"; payload: SessionResumedPayload }
   | { type: "ERROR"; payload: ServerErrorPayload }
   | { type: "CLEAR_ERROR" }
   | { type: "CLEAR_PREPARE_NOTIFICATION" }
@@ -227,6 +232,26 @@ function karaokeReducer(
         currentSong: null,
         nextUp: null,
         prepareNotification: null,
+      };
+
+    case "SESSION_PAUSED":
+      // La sessione è in pausa - aggiorna lo stato della sessione
+      logger.state("SESSION_PAUSED", action.payload);
+      if (!state.session) return state;
+      return {
+        ...state,
+        session: {
+          ...state.session,
+          status: SessionStatus.PAUSED,
+        },
+      };
+
+    case "SESSION_RESUMED":
+      // La sessione è ripresa - aggiorna lo stato della sessione
+      logger.state("SESSION_RESUMED", action.payload);
+      return {
+        ...state,
+        session: action.payload.session,
       };
 
     case "ERROR":
@@ -390,6 +415,20 @@ export function KaraokeProvider({ children }: KaraokeProviderProps) {
       dispatch({ type: "SESSION_ENDED", payload });
     });
 
+    socket.on("sessionPaused", (payload) => {
+      logger.socketIn("sessionPaused", payload);
+      dispatch({ type: "SESSION_PAUSED", payload });
+    });
+
+    socket.on("sessionResumed", (payload: any) => {
+      logger.socketIn("sessionResumed", payload);
+      const parsedPayload: SessionResumedPayload = {
+        ...payload,
+        session: parseSession(payload.session),
+      };
+      dispatch({ type: "SESSION_RESUMED", payload: parsedPayload });
+    });
+
     socket.on("error", (payload) => {
       logger.socketIn("error", payload);
       dispatch({ type: "ERROR", payload });
@@ -406,6 +445,8 @@ export function KaraokeProvider({ children }: KaraokeProviderProps) {
       socket?.off("userJoined");
       socket?.off("userLeft");
       socket?.off("sessionEnded");
+      socket?.off("sessionPaused");
+      socket?.off("sessionResumed");
       socket?.off("error");
     };
   }, [state.connectionStatus]); // Re-registra quando la connessione cambia
