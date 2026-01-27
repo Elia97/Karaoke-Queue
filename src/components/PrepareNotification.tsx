@@ -8,6 +8,7 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, Animated } from "react-native";
 import { useNowPlaying } from "../hooks";
+import { colors, spacing, radius, textStyles } from "../theme";
 
 export function PrepareNotification() {
   const { shouldPrepare, prepareNotification, secondsUntilTurn } =
@@ -60,7 +61,9 @@ export function PrepareNotification() {
       <View style={styles.header}>
         <Text style={styles.title}>🎤 Preparati!</Text>
         {countdown !== null && countdown > 0 && (
-          <Text style={styles.countdown}>{countdown}s</Text>
+          <View style={styles.countdownBadge}>
+            <Text style={styles.countdown}>{countdown}s</Text>
+          </View>
         )}
       </View>
       <Text style={styles.songTitle}>{item.title}</Text>
@@ -72,46 +75,52 @@ export function PrepareNotification() {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#4f46e5",
-    borderRadius: 12,
-    padding: 16,
-    margin: 16,
-    shadowColor: "#000",
+    backgroundColor: colors.primary,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    margin: spacing.lg,
+    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 6,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: spacing.md,
   },
   title: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#fff",
+    ...textStyles.headingMd,
+    color: colors.textPrimary,
+  },
+  countdownBadge: {
+    backgroundColor: colors.warning,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.full,
   },
   countdown: {
-    fontSize: 24,
+    ...textStyles.bodyLg,
     fontWeight: "bold",
-    color: "#fbbf24",
+    color: colors.textInverse,
   },
   songTitle: {
-    fontSize: 18,
+    ...textStyles.bodyLg,
     fontWeight: "600",
-    color: "#fff",
-    marginBottom: 4,
+    color: colors.textPrimary,
+    marginBottom: spacing.xs,
   },
   message: {
-    fontSize: 14,
-    color: "#e0e7ff",
-    marginBottom: 8,
+    ...textStyles.bodySm,
+    color: colors.whiteAlpha20,
+    marginBottom: spacing.sm,
   },
   hint: {
-    fontSize: 14,
-    color: "#c7d2fe",
+    ...textStyles.bodySm,
+    color: colors.textPrimary,
+    opacity: 0.8,
     fontStyle: "italic",
   },
 });

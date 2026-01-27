@@ -23,8 +23,10 @@ import {
   ErrorBanner,
   UserListItem,
   PrepareNotification,
+  ScreenContainer,
 } from "../components";
 import { RootStackParamList, SessionStatus, ConnectionStatus } from "../types";
+import { colors, spacing, radius, textStyles, layout } from "../theme";
 
 type LobbyScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -125,182 +127,231 @@ export function LobbyScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <ScreenContainer noPadding>
       <ConnectionStatusBar />
 
+      {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>Lobby</Text>
-        <View style={styles.sessionInfo}>
-          <Text style={styles.sessionCode}>
-            Codice: {sessionId ?? "Caricamento..."}
-          </Text>
-          <Text style={styles.sessionStatus}>{getSessionStatusText()}</Text>
-        </View>
-        <Button
-          title="📤 Condividi"
-          onPress={handleShareSession}
-          variant="ghost"
-          size="small"
-        />
-      </View>
-
-      <ErrorBanner />
-      <PrepareNotification />
-
-      <View style={styles.usersSection}>
-        <Text style={styles.sectionTitle}>Partecipanti ({userCount})</Text>
-        <FlatList
-          data={users}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <UserListItem user={item} isCurrentUser={item.id === user?.id} />
-          )}
-          contentContainerStyle={styles.usersList}
-          ListEmptyComponent={
-            <Text style={styles.emptyText}>Nessun partecipante</Text>
-          }
-        />
-      </View>
-
-      <View style={styles.actions}>
-        <Button
-          title="🎵 Coda Canzoni"
-          onPress={() => navigation.navigate("Queue")}
-          style={styles.actionButton}
-        />
-
-        {hasCurrentSong && (
+        <View style={styles.headerContent}>
+          <View style={styles.headerTop}>
+            <Text style={styles.title}>Lobby</Text>
+            {isHost && (
+              <View style={styles.hostBadge}>
+                <Text style={styles.hostText}>👑 Host</Text>
+              </View>
+            )}
+          </View>
+          <View style={styles.sessionInfo}>
+            <View style={styles.sessionCodeContainer}>
+              <Text style={styles.sessionCodeLabel}>Codice sessione</Text>
+              <Text style={styles.sessionCode}>
+                {sessionId ?? "Caricamento..."}
+              </Text>
+            </View>
+            <Text style={styles.sessionStatus}>{getSessionStatusText()}</Text>
+          </View>
           <Button
-            title="🎤 In riproduzione"
-            onPress={() => navigation.navigate("NowPlaying")}
+            title="📤 Condividi codice"
+            onPress={handleShareSession}
             variant="secondary"
-            style={styles.actionButton}
+            size="small"
           />
-        )}
+        </View>
       </View>
 
-      {/* Bottone termina sessione - solo host */}
-      {isHost && (
-        <View style={styles.endSessionContainer}>
-          <Button
-            title="⏹️ Termina sessione"
-            onPress={handleEndSession}
-            variant="danger"
-            style={styles.endSessionButton}
-          />
-        </View>
-      )}
+      {/* Content with max-width */}
+      <View style={styles.contentWrapper}>
+        <View style={styles.content}>
+          <ErrorBanner />
+          <PrepareNotification />
 
-      {/* Status info */}
-      {isSessionWaiting && (
-        <View style={styles.statusBanner}>
-          <Text style={styles.statusText}>
-            In attesa che qualcuno aggiunga canzoni alla coda...
-          </Text>
-        </View>
-      )}
+          {/* Users Section */}
+          <View style={styles.usersSection}>
+            <Text style={styles.sectionTitle}>Partecipanti ({userCount})</Text>
+            <FlatList
+              data={users}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
+                <UserListItem
+                  user={item}
+                  isCurrentUser={item.id === user?.id}
+                />
+              )}
+              contentContainerStyle={styles.usersList}
+              ListEmptyComponent={
+                <Text style={styles.emptyText}>Nessun partecipante</Text>
+              }
+            />
+          </View>
 
-      {/* Host badge */}
-      {isHost && (
-        <View style={styles.hostBadge}>
-          <Text style={styles.hostText}>👑 Sei l'host</Text>
+          {/* Status info */}
+          {isSessionWaiting && (
+            <View style={styles.statusBanner}>
+              <Text style={styles.statusText}>
+                ⏳ In attesa che qualcuno aggiunga canzoni alla coda...
+              </Text>
+            </View>
+          )}
         </View>
-      )}
-    </View>
+      </View>
+
+      {/* Bottom actions - full width background */}
+      <View style={styles.actionsBackground}>
+        <View style={styles.actionsContent}>
+          <View style={styles.actions}>
+            <Button
+              title="🎵 Coda Canzoni"
+              onPress={() => navigation.navigate("Queue")}
+              style={styles.actionButton}
+            />
+
+            {hasCurrentSong && (
+              <Button
+                title="🎤 In riproduzione"
+                onPress={() => navigation.navigate("NowPlaying")}
+                variant="secondary"
+                style={styles.actionButton}
+              />
+            )}
+          </View>
+
+          {/* Bottone termina sessione - solo host */}
+          {isHost && (
+            <Button
+              title="⏹️ Termina sessione"
+              onPress={handleEndSession}
+              variant="danger"
+              style={styles.endSessionButton}
+            />
+          )}
+        </View>
+      </View>
+    </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f9fafb",
-  },
+  // Header - full width background
   header: {
-    padding: 20,
-    backgroundColor: "#fff",
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: "#e5e7eb",
+    borderBottomColor: colors.border,
+  },
+  headerContent: {
+    maxWidth: layout.maxWidth,
+    width: "100%",
+    alignSelf: "center",
+    padding: spacing.xl,
+  },
+  headerTop: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: spacing.lg,
   },
   title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#1f2937",
-    marginBottom: 8,
+    ...textStyles.headingLg,
+    color: colors.textPrimary,
+  },
+  hostBadge: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.full,
+  },
+  hostText: {
+    ...textStyles.caption,
+    color: colors.textPrimary,
+    fontWeight: "600",
   },
   sessionInfo: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: spacing.lg,
+  },
+  sessionCodeContainer: {
+    flex: 1,
+  },
+  sessionCodeLabel: {
+    ...textStyles.caption,
+    color: colors.textMuted,
+    marginBottom: spacing.xs,
   },
   sessionCode: {
-    fontSize: 16,
-    color: "#6b7280",
+    ...textStyles.headingMd,
+    color: colors.primaryLight,
     fontFamily: "monospace",
+    letterSpacing: 2,
   },
   sessionStatus: {
-    fontSize: 14,
-    color: "#4b5563",
+    ...textStyles.bodySm,
+    color: colors.textSecondary,
+  },
+
+  // Content area
+  contentWrapper: {
+    flex: 1,
+    alignItems: "center",
+  },
+  content: {
+    flex: 1,
+    width: "100%",
+    maxWidth: layout.maxWidth,
+    paddingHorizontal: spacing.lg,
   },
   usersSection: {
     flex: 1,
-    padding: 16,
+    paddingTop: spacing.lg,
   },
   sectionTitle: {
-    fontSize: 18,
+    ...textStyles.bodyMd,
+    color: colors.textSecondary,
     fontWeight: "600",
-    color: "#374151",
-    marginBottom: 12,
+    marginBottom: spacing.md,
   },
   usersList: {
-    paddingBottom: 16,
+    paddingBottom: spacing.lg,
   },
   emptyText: {
-    fontSize: 14,
-    color: "#9ca3af",
+    ...textStyles.bodySm,
+    color: colors.textMuted,
     fontStyle: "italic",
     textAlign: "center",
-    marginTop: 20,
+    marginTop: spacing.xl,
+  },
+  statusBanner: {
+    backgroundColor: colors.surfaceLight,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+    borderRadius: radius.md,
+  },
+  statusText: {
+    ...textStyles.bodySm,
+    color: colors.textSecondary,
+    textAlign: "center",
+  },
+
+  // Bottom actions - full width background
+  actionsBackground: {
+    backgroundColor: colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  actionsContent: {
+    maxWidth: layout.maxWidth,
+    width: "100%",
+    alignSelf: "center",
+    padding: spacing.lg,
   },
   actions: {
     flexDirection: "row",
-    padding: 16,
-    gap: 12,
+    gap: spacing.md,
   },
   actionButton: {
     flex: 1,
   },
-  statusBanner: {
-    backgroundColor: "#fef3c7",
-    padding: 12,
-    marginHorizontal: 16,
-    marginBottom: 16,
-    borderRadius: 8,
-  },
-  statusText: {
-    fontSize: 14,
-    color: "#92400e",
-    textAlign: "center",
-  },
-  hostBadge: {
-    position: "absolute",
-    top: 100,
-    right: 20,
-    backgroundColor: "#fbbf24",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  hostText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#78350f",
-  },
-  endSessionContainer: {
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-  },
   endSessionButton: {
-    backgroundColor: "#ef4444",
+    marginTop: spacing.md,
   },
 });

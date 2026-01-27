@@ -5,6 +5,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { User, UserRole } from "../types";
+import { colors, spacing, radius, textStyles } from "../theme";
 
 interface UserListItemProps {
   user: User;
@@ -15,9 +16,11 @@ export function UserListItem({
   user,
   isCurrentUser = false,
 }: UserListItemProps) {
+  const isHost = user.role === UserRole.HOST;
+
   return (
     <View style={[styles.container, isCurrentUser && styles.currentUser]}>
-      <View style={styles.avatar}>
+      <View style={[styles.avatar, isHost && styles.hostAvatar]}>
         <Text style={styles.avatarText}>
           {user.nickname.charAt(0).toUpperCase()}
         </Text>
@@ -27,10 +30,8 @@ export function UserListItem({
           {user.nickname}
           {isCurrentUser && " (tu)"}
         </Text>
-        <Text
-          style={[styles.role, user.role === UserRole.HOST && styles.hostRole]}
-        >
-          {user.role === UserRole.HOST ? "👑 Host" : "Partecipante"}
+        <Text style={[styles.role, isHost && styles.hostRole]}>
+          {isHost ? "👑 Host" : "Partecipante"}
         </Text>
       </View>
     </View>
@@ -41,45 +42,48 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 12,
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    marginVertical: 4,
+    padding: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    marginVertical: spacing.xs,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   currentUser: {
-    backgroundColor: "#eff6ff",
-    borderWidth: 1,
-    borderColor: "#3b82f6",
+    borderColor: colors.primary,
   },
   avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#e5e7eb",
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.surfaceLight,
     justifyContent: "center",
     alignItems: "center",
   },
+  hostAvatar: {
+    backgroundColor: colors.primary,
+  },
   avatarText: {
-    fontSize: 18,
+    ...textStyles.bodyLg,
     fontWeight: "600",
-    color: "#374151",
+    color: colors.textPrimary,
   },
   info: {
-    marginLeft: 12,
+    marginLeft: spacing.md,
     flex: 1,
   },
   nickname: {
-    fontSize: 16,
+    ...textStyles.bodyMd,
     fontWeight: "500",
-    color: "#111827",
+    color: colors.textPrimary,
   },
   role: {
-    fontSize: 12,
-    color: "#6b7280",
-    marginTop: 2,
+    ...textStyles.caption,
+    color: colors.textMuted,
+    marginTop: spacing.xs,
   },
   hostRole: {
-    color: "#f59e0b",
+    color: colors.primaryLight,
     fontWeight: "500",
   },
 });

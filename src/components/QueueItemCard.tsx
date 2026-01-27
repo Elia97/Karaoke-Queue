@@ -5,6 +5,7 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { QueueItem, QueueItemStatus } from "../types";
+import { colors, spacing, radius, textStyles } from "../theme";
 
 interface QueueItemCardProps {
   item: QueueItem;
@@ -26,7 +27,7 @@ export function QueueItemCard({
       case QueueItemStatus.QUEUED:
         return { text: "In coda", style: styles.badgeQueued };
       case QueueItemStatus.PREPARING:
-        return { text: "In preparazione", style: styles.badgePreparing };
+        return { text: "Preparazione", style: styles.badgePreparing };
       case QueueItemStatus.PERFORMING:
         return { text: "🎤 In corso", style: styles.badgePerforming };
       case QueueItemStatus.COMPLETED:
@@ -43,8 +44,12 @@ export function QueueItemCard({
   return (
     <View style={[styles.container, isMyItem && styles.myItem]}>
       {showPosition && item.position !== null && (
-        <View style={styles.positionContainer}>
-          <Text style={styles.position}>{item.position}</Text>
+        <View
+          style={[styles.positionContainer, isMyItem && styles.myPositionBg]}
+        >
+          <Text style={[styles.position, isMyItem && styles.myPositionText]}>
+            {item.position}
+          </Text>
         </View>
       )}
 
@@ -54,7 +59,7 @@ export function QueueItemCard({
             {item.title}
           </Text>
           <Text style={styles.requestedBy}>
-            Richiesta da: {item.singerNickname}
+            {item.singerNickname}
             {isMyItem && " (tu)"}
           </Text>
         </View>
@@ -78,35 +83,36 @@ export function QueueItemCard({
 const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    marginHorizontal: 16,
-    marginVertical: 6,
-    padding: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    marginVertical: spacing.xs,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   myItem: {
-    backgroundColor: "#f0f9ff",
-    borderLeftWidth: 4,
-    borderLeftColor: "#3b82f6",
+    backgroundColor: colors.surfaceLight,
+    borderColor: colors.borderLight,
   },
   positionContainer: {
     width: 32,
     height: 32,
-    borderRadius: 16,
-    backgroundColor: "#e5e7eb",
+    borderRadius: radius.full,
+    backgroundColor: colors.surfaceLight,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 12,
+    marginRight: spacing.md,
+  },
+  myPositionBg: {
+    backgroundColor: colors.primary,
   },
   position: {
-    fontSize: 14,
+    ...textStyles.bodySm,
     fontWeight: "600",
-    color: "#6b7280",
+    color: colors.textSecondary,
+  },
+  myPositionText: {
+    color: colors.textPrimary,
   },
   content: {
     flex: 1,
@@ -115,54 +121,53 @@ const styles = StyleSheet.create({
   },
   songInfo: {
     flex: 1,
-    marginRight: 12,
+    marginRight: spacing.md,
   },
   songTitle: {
-    fontSize: 16,
+    ...textStyles.bodyMd,
     fontWeight: "600",
-    color: "#1f2937",
-    marginBottom: 4,
+    color: colors.textPrimary,
+    marginBottom: spacing.xs,
   },
   requestedBy: {
-    fontSize: 12,
-    color: "#6b7280",
-    marginTop: 2,
+    ...textStyles.caption,
+    color: colors.textMuted,
   },
   rightSection: {
     alignItems: "flex-end",
     justifyContent: "space-between",
   },
   badge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.full,
   },
   badgeText: {
-    fontSize: 12,
+    ...textStyles.caption,
+    color: colors.textPrimary,
     fontWeight: "500",
-    color: "#fff",
   },
   badgeQueued: {
-    backgroundColor: "#6b7280",
+    backgroundColor: colors.surfaceLight,
   },
   badgePreparing: {
-    backgroundColor: "#f59e0b",
+    backgroundColor: colors.warning,
   },
   badgePerforming: {
-    backgroundColor: "#10b981",
+    backgroundColor: colors.success,
   },
   badgeCompleted: {
-    backgroundColor: "#3b82f6",
+    backgroundColor: colors.primary,
   },
   badgeSkipped: {
-    backgroundColor: "#ef4444",
+    backgroundColor: colors.error,
   },
   removeButton: {
-    marginTop: 8,
+    marginTop: spacing.sm,
   },
   removeText: {
-    fontSize: 12,
-    color: "#ef4444",
+    ...textStyles.caption,
+    color: colors.error,
     fontWeight: "500",
   },
 });

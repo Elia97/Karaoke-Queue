@@ -8,6 +8,7 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { useError } from "../hooks";
+import { colors, spacing, radius, textStyles } from "../theme";
 
 export function ErrorBanner() {
   const { hasError, errorMessage, errorCode, clearError } = useError();
@@ -33,32 +34,32 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fef2f2",
+    backgroundColor: colors.errorSurface,
     borderWidth: 1,
-    borderColor: "#fecaca",
-    borderRadius: 8,
-    padding: 12,
-    margin: 16,
+    borderColor: colors.error,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
   },
   content: {
     flex: 1,
   },
   message: {
-    color: "#dc2626",
-    fontSize: 14,
+    ...textStyles.bodySm,
+    color: colors.errorLight,
     fontWeight: "500",
   },
   code: {
-    color: "#991b1b",
-    fontSize: 12,
-    marginTop: 4,
+    ...textStyles.caption,
+    color: colors.error,
+    marginTop: spacing.xs,
   },
   dismissButton: {
-    padding: 4,
-    marginLeft: 8,
+    padding: spacing.xs,
+    marginLeft: spacing.sm,
   },
   dismissText: {
-    color: "#dc2626",
+    color: colors.errorLight,
     fontSize: 18,
     fontWeight: "bold",
   },

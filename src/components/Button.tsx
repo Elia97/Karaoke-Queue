@@ -1,5 +1,7 @@
 /**
  * Button - Componente bottone riutilizzabile
+ *
+ * Design: Dark theme, rounded corners, larger touch targets
  */
 
 import React from "react";
@@ -11,6 +13,7 @@ import {
   ViewStyle,
   TextStyle,
 } from "react-native";
+import { colors, spacing, radius, textStyles } from "../theme";
 
 interface ButtonProps {
   title: string;
@@ -39,26 +42,26 @@ export function Button({
     style,
   ].filter(Boolean) as ViewStyle[];
 
-  const textStyles: TextStyle[] = [
+  const textStyles_: TextStyle[] = [
     styles.text,
     styles[`text_${variant}`],
     styles[`text_${size}`],
+    (disabled || loading) && styles.textDisabled,
   ].filter(Boolean) as TextStyle[];
+
+  const spinnerColor = colors.textPrimary;
 
   return (
     <TouchableOpacity
       style={containerStyles}
       onPress={onPress}
       disabled={disabled || loading}
-      activeOpacity={0.7}
+      activeOpacity={0.8}
     >
       {loading ? (
-        <ActivityIndicator
-          size="small"
-          color={variant === "primary" ? "#fff" : "#4f46e5"}
-        />
+        <ActivityIndicator size="small" color={spinnerColor} />
       ) : (
-        <Text style={textStyles}>{title}</Text>
+        <Text style={textStyles_}>{title}</Text>
       )}
     </TouchableOpacity>
   );
@@ -66,51 +69,60 @@ export function Button({
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: 8,
     justifyContent: "center",
     alignItems: "center",
+    borderRadius: radius.md,
   },
+  // Variants
   container_primary: {
-    backgroundColor: "#4f46e5",
+    backgroundColor: colors.primary,
   },
   container_secondary: {
-    backgroundColor: "#e5e7eb",
+    backgroundColor: colors.surfaceLight,
   },
   container_danger: {
-    backgroundColor: "#ef4444",
+    backgroundColor: colors.error,
   },
   container_ghost: {
-    backgroundColor: "transparent",
+    backgroundColor: colors.transparent,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
+  // Sizes - larger touch targets for mobile
   container_small: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    minHeight: 40,
   },
   container_medium: {
-    paddingVertical: 12,
-    paddingHorizontal: 20,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xl,
+    minHeight: 48,
   },
   container_large: {
-    paddingVertical: 16,
-    paddingHorizontal: 24,
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing["2xl"],
+    minHeight: 56,
   },
+  // States
   disabled: {
     opacity: 0.5,
   },
+  // Text styles - all white for better contrast
   text: {
-    fontWeight: "600",
+    ...textStyles.button,
   },
   text_primary: {
-    color: "#fff",
+    color: colors.textPrimary,
   },
   text_secondary: {
-    color: "#374151",
+    color: colors.textPrimary,
   },
   text_danger: {
-    color: "#fff",
+    color: colors.textPrimary,
   },
   text_ghost: {
-    color: "#4f46e5",
+    color: colors.textPrimary,
   },
   text_small: {
     fontSize: 14,
@@ -119,6 +131,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   text_large: {
-    fontSize: 18,
+    ...textStyles.buttonLg,
+  },
+  textDisabled: {
+    opacity: 0.7,
   },
 });

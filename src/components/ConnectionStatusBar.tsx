@@ -9,6 +9,7 @@ import React from "react";
 import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
 import { useSocket } from "../hooks";
 import { ConnectionStatus } from "../types";
+import { colors, spacing, textStyles } from "../theme";
 
 export function ConnectionStatusBar() {
   const { connectionStatus } = useSocket();
@@ -30,7 +31,11 @@ export function ConnectionStatusBar() {
       ]}
     >
       {isReconnecting && (
-        <ActivityIndicator size="small" color="#fff" style={styles.spinner} />
+        <ActivityIndicator
+          size="small"
+          color={colors.textPrimary}
+          style={styles.spinner}
+        />
       )}
       <Text style={styles.text}>
         {connectionStatus === ConnectionStatus.CONNECTING &&
@@ -48,21 +53,21 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
   },
   reconnecting: {
-    backgroundColor: "#f59e0b",
+    backgroundColor: colors.warning,
   },
   disconnected: {
-    backgroundColor: "#ef4444",
+    backgroundColor: colors.error,
   },
   spinner: {
-    marginRight: 8,
+    marginRight: spacing.sm,
   },
   text: {
-    color: "#fff",
-    fontSize: 14,
+    ...textStyles.bodySm,
+    color: colors.textPrimary,
     fontWeight: "500",
   },
 });

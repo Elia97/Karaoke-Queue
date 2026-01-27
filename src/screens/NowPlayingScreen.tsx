@@ -11,7 +11,7 @@
  */
 
 import React, { useEffect } from "react";
-import { View, Text, StyleSheet, Alert } from "react-native";
+import { View, Text, StyleSheet, Alert, ScrollView } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useNowPlaying, useSession, useSocket } from "../hooks";
@@ -20,8 +20,10 @@ import {
   ConnectionStatusBar,
   ErrorBanner,
   PrepareNotification,
+  ScreenContainer,
 } from "../components";
 import { RootStackParamList } from "../types";
+import { colors, spacing, radius, textStyles, layout } from "../theme";
 
 type NowPlayingScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -59,7 +61,7 @@ export function NowPlayingScreen() {
 
   if (!hasCurrentSong || !currentSong) {
     return (
-      <View style={styles.container}>
+      <ScreenContainer>
         <ConnectionStatusBar />
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyIcon}>🎵</Text>
@@ -73,170 +75,214 @@ export function NowPlayingScreen() {
             style={styles.emptyButton}
           />
         </View>
-      </View>
+      </ScreenContainer>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <ScreenContainer noPadding>
       <ConnectionStatusBar />
-      <ErrorBanner />
-      <PrepareNotification />
 
-      <View style={styles.content}>
-        {/* Album art placeholder */}
-        <View style={styles.albumArt}>
-          <Text style={styles.albumIcon}>🎤</Text>
-        </View>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.contentWrapper}>
+          <ErrorBanner />
+          <PrepareNotification />
 
-        {/* Song info */}
-        <Text style={styles.songTitle}>{currentSong.title}</Text>
+          <View style={styles.content}>
+            {/* Album art placeholder */}
+            <View style={styles.albumArt}>
+              <Text style={styles.albumIcon}>🎤</Text>
+            </View>
 
-        {/* Performer */}
-        <View style={[styles.performerBadge, isMyTurn && styles.myTurnBadge]}>
-          <Text style={[styles.performerText, isMyTurn && styles.myTurnText]}>
-            {isMyTurn ? "🎤 È il tuo turno!" : `Cantante: ${currentPerformer}`}
-          </Text>
-        </View>
+            {/* Song info */}
+            <Text style={styles.songTitle}>{currentSong.title}</Text>
 
-        {/* Next up */}
-        {nextUp && (
-          <View style={styles.nextUpContainer}>
-            <Text style={styles.nextUpLabel}>Prossima:</Text>
-            <Text style={styles.nextUpTitle}>{nextUp.title}</Text>
-            <Text style={styles.nextUpPerformer}>
-              di {nextUp.singerNickname}
-            </Text>
+            {/* Performer */}
+            <View
+              style={[styles.performerBadge, isMyTurn && styles.myTurnBadge]}
+            >
+              <Text
+                style={[styles.performerText, isMyTurn && styles.myTurnText]}
+              >
+                {isMyTurn
+                  ? "🎤 È il tuo turno!"
+                  : `Cantante: ${currentPerformer}`}
+              </Text>
+            </View>
+
+            {/* Next up */}
+            {nextUp && (
+              <View style={styles.nextUpContainer}>
+                <Text style={styles.nextUpLabel}>Prossima</Text>
+                <Text style={styles.nextUpTitle}>{nextUp.title}</Text>
+                <Text style={styles.nextUpPerformer}>
+                  di {nextUp.singerNickname}
+                </Text>
+              </View>
+            )}
           </View>
-        )}
-      </View>
+        </View>
+      </ScrollView>
 
-      {/* Host controls */}
-      <View style={styles.controls}>
-        <Button
-          title="🎵 Vai alla coda"
-          onPress={() => navigation.navigate("Queue")}
-          variant="secondary"
-        />
-        {isHost && (
+      {/* Controls - full width background */}
+      <View style={styles.controlsBackground}>
+        <View style={styles.controlsContent}>
           <Button
-            title="⏭️ Prossima canzone"
-            onPress={handleSkip}
-            style={styles.skipButton}
+            title="🎵 Vai alla coda"
+            onPress={() => navigation.navigate("Queue")}
+            variant="secondary"
+            size="large"
           />
-        )}
+          {isHost && (
+            <Button
+              title="⏭️ Prossima canzone"
+              onPress={handleSkip}
+              size="large"
+              style={styles.skipButton}
+            />
+          )}
+        </View>
       </View>
-    </View>
+    </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#1f2937",
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: "center",
+  // Scroll content
+  scrollContent: {
+    flexGrow: 1,
     alignItems: "center",
-    padding: 24,
   },
-  emptyIcon: {
-    fontSize: 64,
-    marginBottom: 16,
-  },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#fff",
-    marginBottom: 8,
-    textAlign: "center",
-  },
-  emptySubtitle: {
-    fontSize: 14,
-    color: "#9ca3af",
-    marginBottom: 24,
-    textAlign: "center",
-  },
-  emptyButton: {
-    minWidth: 200,
+  contentWrapper: {
+    width: "100%",
+    maxWidth: layout.maxWidth,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xl,
   },
   content: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: 24,
+    paddingVertical: spacing["2xl"],
   },
+
+  // Empty state
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: spacing.xl,
+  },
+  emptyIcon: {
+    fontSize: 80,
+    marginBottom: spacing.xl,
+  },
+  emptyTitle: {
+    ...textStyles.headingMd,
+    color: colors.textPrimary,
+    marginBottom: spacing.sm,
+    textAlign: "center",
+  },
+  emptySubtitle: {
+    ...textStyles.bodyMd,
+    color: colors.textSecondary,
+    marginBottom: spacing["2xl"],
+    textAlign: "center",
+  },
+  emptyButton: {
+    minWidth: 200,
+  },
+
+  // Album art
   albumArt: {
     width: 200,
     height: 200,
     borderRadius: 100,
-    backgroundColor: "#374151",
+    backgroundColor: colors.surface,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 32,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
+    marginBottom: spacing["2xl"],
+    borderWidth: 4,
+    borderColor: colors.primary,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.4,
+    shadowRadius: 20,
     elevation: 8,
   },
   albumIcon: {
     fontSize: 80,
   },
+
+  // Song info
   songTitle: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#fff",
+    ...textStyles.headingLg,
+    color: colors.textPrimary,
     textAlign: "center",
-    marginBottom: 16,
+    marginBottom: spacing.lg,
   },
   performerBadge: {
-    backgroundColor: "#374151",
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 24,
-    marginBottom: 24,
+    backgroundColor: colors.surfaceLight,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
+    borderRadius: radius.full,
+    marginBottom: spacing.xl,
   },
   myTurnBadge: {
-    backgroundColor: "#10b981",
+    backgroundColor: colors.success,
   },
   performerText: {
-    fontSize: 16,
-    color: "#9ca3af",
+    ...textStyles.bodyMd,
+    color: colors.textSecondary,
     fontWeight: "500",
   },
   myTurnText: {
-    color: "#fff",
+    color: colors.textPrimary,
   },
+
+  // Next up
   nextUpContainer: {
-    backgroundColor: "#374151",
-    padding: 16,
-    borderRadius: 12,
+    backgroundColor: colors.surface,
+    padding: spacing.lg,
+    borderRadius: radius.lg,
     alignItems: "center",
     width: "100%",
-    maxWidth: 300,
+    maxWidth: 320,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   nextUpLabel: {
-    fontSize: 12,
-    color: "#6b7280",
-    marginBottom: 4,
+    ...textStyles.caption,
+    color: colors.textMuted,
+    marginBottom: spacing.xs,
+    textTransform: "uppercase",
+    letterSpacing: 1,
   },
   nextUpTitle: {
-    fontSize: 16,
+    ...textStyles.bodyLg,
+    color: colors.textPrimary,
     fontWeight: "600",
-    color: "#fff",
-    marginBottom: 2,
+    marginBottom: spacing.xs,
   },
   nextUpPerformer: {
-    fontSize: 14,
-    color: "#9ca3af",
+    ...textStyles.bodySm,
+    color: colors.textSecondary,
   },
-  controls: {
-    padding: 24,
-    gap: 12,
+
+  // Controls - full width background
+  controlsBackground: {
+    backgroundColor: colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  controlsContent: {
+    maxWidth: layout.maxWidth,
+    width: "100%",
+    alignSelf: "center",
+    padding: spacing.xl,
+    gap: spacing.md,
   },
   skipButton: {
-    marginTop: 8,
+    marginTop: spacing.xs,
   },
 });

@@ -35,6 +35,7 @@ import { useSocket, useSession, useError } from "../hooks";
 import { useKaraokeContext } from "../context";
 import { Button, ConnectionStatusBar, ErrorBanner } from "../components";
 import { RootStackParamList, ConnectionStatus } from "../types";
+import { colors, spacing, radius, textStyles, layout } from "../theme";
 
 type JoinScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -188,130 +189,150 @@ export function JoinScreen() {
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={styles.header}>
-          <TouchableOpacity onPress={handleSecretTap} activeOpacity={0.8}>
+        <View style={styles.contentWrapper}>
+          {/* Header */}
+          <View style={styles.header}>
+            <TouchableOpacity onPress={handleSecretTap} activeOpacity={0.9}>
+              <Text style={styles.emoji}>🎤</Text>
+            </TouchableOpacity>
             <Text style={styles.title}>Karaoke</Text>
-          </TouchableOpacity>
-          <Text style={styles.subtitle}>
-            {isHostMode
-              ? "Crea una sessione per i tuoi amici!"
-              : "Entra e canta con i tuoi amici!"}
-          </Text>
-        </View>
-
-        {/* Hidden PIN input - appears after 5 taps on title */}
-        {showPinInput && !isHostUnlocked && (
-          <View style={styles.pinContainer}>
-            <Text style={styles.pinLabel}>🔐 Inserisci PIN Conduttore</Text>
-            <TextInput
-              style={styles.pinInput}
-              placeholder="PIN"
-              value={hostPin}
-              onChangeText={setHostPin}
-              keyboardType="number-pad"
-              secureTextEntry
-              maxLength={6}
-              autoFocus
-            />
-            <View style={styles.pinButtons}>
-              <Button
-                title="Annulla"
-                onPress={() => {
-                  setShowPinInput(false);
-                  setHostPin("");
-                }}
-                style={styles.pinCancelButton}
-              />
-              <Button
-                title="Conferma"
-                onPress={handlePinSubmit}
-                disabled={hostPin.length === 0}
-                style={styles.pinConfirmButton}
-              />
-            </View>
+            <Text style={styles.subtitle}>
+              {isHostMode
+                ? "Crea una sessione per i tuoi amici"
+                : "Entra e canta con i tuoi amici"}
+            </Text>
           </View>
-        )}
 
-        <ErrorBanner />
-
-        {/* Badge conduttore - visibile solo se sbloccato via PIN (host mode forzato) */}
-        {isHostUnlocked && (
-          <View style={styles.hostBadge}>
-            <Text style={styles.hostBadgeIcon}>👑</Text>
-            <View style={styles.hostBadgeText}>
-              <Text style={styles.hostBadgeTitle}>Modalità Conduttore</Text>
-              <Text style={styles.hostBadgeHint}>
-                Puoi creare una nuova sessione
-              </Text>
+          {/* PIN Input Modal */}
+          {showPinInput && !isHostUnlocked && (
+            <View style={styles.pinContainer}>
+              <View style={styles.pinHeader}>
+                <Text style={styles.pinIcon}>🔐</Text>
+                <Text style={styles.pinLabel}>Accesso Conduttore</Text>
+              </View>
+              <TextInput
+                style={styles.pinInput}
+                placeholder="Inserisci PIN"
+                placeholderTextColor={colors.textMuted}
+                value={hostPin}
+                onChangeText={setHostPin}
+                keyboardType="number-pad"
+                secureTextEntry
+                maxLength={6}
+                autoFocus
+              />
+              <View style={styles.pinButtons}>
+                <Button
+                  title="Annulla"
+                  variant="secondary"
+                  onPress={() => {
+                    setShowPinInput(false);
+                    setHostPin("");
+                  }}
+                  style={styles.pinButton}
+                />
+                <Button
+                  title="Conferma"
+                  onPress={handlePinSubmit}
+                  disabled={hostPin.length === 0}
+                  style={styles.pinButton}
+                />
+              </View>
             </View>
-          </View>
-        )}
+          )}
 
-        <View style={styles.form}>
-          <Text style={styles.label}>Il tuo nickname</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Come ti chiami?"
-            value={nickname}
-            onChangeText={setNickname}
-            maxLength={20}
-            autoCapitalize="none"
-            autoCorrect={false}
-            editable={!isLoading}
-          />
+          <ErrorBanner />
 
-          {/* Modalità PARTECIPANTE */}
-          {!isHostMode && (
-            <>
-              <Text style={styles.label}>Codice sessione</Text>
+          {/* Host Mode Badge */}
+          {isHostUnlocked && (
+            <View style={styles.hostBadge}>
+              <View style={styles.hostBadgeContent}>
+                <Text style={styles.hostBadgeIcon}>👑</Text>
+                <View style={styles.hostBadgeText}>
+                  <Text style={styles.hostBadgeTitle}>Modalità Conduttore</Text>
+                  <Text style={styles.hostBadgeHint}>
+                    Puoi creare una nuova sessione
+                  </Text>
+                </View>
+              </View>
+            </View>
+          )}
+
+          {/* Form */}
+          <View style={styles.form}>
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Il tuo nickname</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Inserisci il codice ricevuto dal conduttore"
-                value={sessionCode}
-                onChangeText={setSessionCode}
-                autoCapitalize="characters"
+                placeholder="Come vuoi essere chiamato?"
+                placeholderTextColor={colors.textMuted}
+                value={nickname}
+                onChangeText={setNickname}
+                maxLength={20}
+                autoCapitalize="none"
                 autoCorrect={false}
                 editable={!isLoading}
               />
+            </View>
 
-              <Button
-                title={isJoining ? "Entrando..." : "🎵 Entra nella sessione"}
-                onPress={handleJoinSession}
-                disabled={!canJoin || isLoading}
-                loading={isJoining}
-                style={styles.button}
-              />
-            </>
-          )}
+            {/* Participant Mode */}
+            {!isHostMode && (
+              <>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Codice sessione</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Chiedi il codice al conduttore"
+                    placeholderTextColor={colors.textMuted}
+                    value={sessionCode}
+                    onChangeText={setSessionCode}
+                    autoCapitalize="characters"
+                    autoCorrect={false}
+                    editable={!isLoading}
+                  />
+                </View>
 
-          {/* Modalità CONDUTTORE */}
-          {isHostMode && (
-            <>
-              <View style={styles.hostInfo}>
-                <Text style={styles.hostInfoIcon}>👑</Text>
-                <Text style={styles.hostInfoText}>
-                  Come conduttore, sarai responsabile della sessione karaoke.
-                  Potrai gestire la coda e controllare le canzoni in
-                  riproduzione.
-                </Text>
-              </View>
+                <Button
+                  title={isJoining ? "Connessione..." : "Entra nella sessione"}
+                  onPress={handleJoinSession}
+                  disabled={!canJoin || isLoading}
+                  loading={isJoining}
+                  size="large"
+                  style={styles.mainButton}
+                />
+              </>
+            )}
 
-              <Button
-                title={isCreating ? "Creando sessione..." : "👑 Crea sessione"}
-                onPress={handleCreateSession}
-                disabled={!canCreate || isLoading}
-                loading={isCreating}
-                style={styles.createButton}
-              />
-            </>
+            {/* Host Mode */}
+            {isHostMode && (
+              <>
+                <View style={styles.hostInfo}>
+                  <Text style={styles.hostInfoText}>
+                    Come conduttore, gestirai la coda e controllerai le canzoni
+                    in riproduzione. Gli altri partecipanti potranno unirsi
+                    usando il codice sessione.
+                  </Text>
+                </View>
+
+                <Button
+                  title={isCreating ? "Creazione..." : "Crea nuova sessione"}
+                  onPress={handleCreateSession}
+                  disabled={!canCreate || isLoading}
+                  loading={isCreating}
+                  size="large"
+                  style={styles.mainButton}
+                />
+              </>
+            )}
+          </View>
+
+          {/* Connection hint */}
+          {!isConnected && (
+            <Text style={styles.connectionHint}>
+              Connessione al server in corso...
+            </Text>
           )}
         </View>
-
-        {!isConnected && (
-          <Text style={styles.connectionHint}>
-            In attesa della connessione al server...
-          </Text>
-        )}
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -320,152 +341,157 @@ export function JoinScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f9fafb",
+    backgroundColor: colors.background,
   },
   scrollContent: {
     flexGrow: 1,
-    padding: 24,
-    maxWidth: 768,
-    width: "100%",
-    marginHorizontal: "auto",
+    alignItems: "center",
+    justifyContent: "center",
   },
+  contentWrapper: {
+    width: "100%",
+    maxWidth: layout.maxWidth,
+    padding: spacing.xl,
+    paddingTop: spacing["3xl"],
+  },
+
+  // Header
   header: {
     alignItems: "center",
-    marginTop: 80,
-    marginBottom: 24,
+    marginBottom: spacing["2xl"],
+  },
+  emoji: {
+    fontSize: 64,
+    marginBottom: spacing.sm,
   },
   title: {
-    fontSize: 42,
-    fontWeight: "bold",
-    color: "#111827",
+    ...textStyles.displayLg,
+    color: colors.textPrimary,
+    marginBottom: spacing.sm,
   },
   subtitle: {
-    fontSize: 18,
-    color: "#6b7280",
+    ...textStyles.bodyLg,
+    color: colors.textSecondary,
     textAlign: "center",
   },
-  hostBadge: {
+
+  // PIN Input
+  pinContainer: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    padding: spacing.xl,
+    marginBottom: spacing.xl,
+    borderWidth: 1,
+    borderColor: colors.primary,
+  },
+  pinHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 20,
-    backgroundColor: "#fef3c7",
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 2,
-    borderColor: "#fbbf24",
+    justifyContent: "center",
+    marginBottom: spacing.lg,
+  },
+  pinIcon: {
+    fontSize: 24,
+    marginRight: spacing.sm,
+  },
+  pinLabel: {
+    ...textStyles.headingMd,
+    color: colors.textPrimary,
+  },
+  pinInput: {
+    backgroundColor: colors.surfaceLight,
+    borderRadius: radius.md,
+    padding: spacing.lg,
+    fontSize: 24,
+    color: colors.textPrimary,
+    textAlign: "center",
+    letterSpacing: 8,
+    marginBottom: spacing.lg,
+  },
+  pinButtons: {
+    flexDirection: "row",
+    gap: spacing.md,
+  },
+  pinButton: {
+    flex: 1,
+  },
+
+  // Host Badge
+  hostBadge: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.xl,
+    borderWidth: 1,
+    borderColor: colors.primary,
+  },
+  hostBadgeContent: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   hostBadgeIcon: {
-    fontSize: 28,
-    marginRight: 12,
+    fontSize: 32,
+    marginRight: spacing.md,
   },
   hostBadgeText: {
     flex: 1,
   },
   hostBadgeTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#92400e",
+    ...textStyles.headingMd,
+    color: colors.primaryLight,
+    marginBottom: spacing.xs,
   },
   hostBadgeHint: {
-    fontSize: 12,
-    color: "#b45309",
-    marginTop: 2,
+    ...textStyles.bodySm,
+    color: colors.textSecondary,
   },
+
+  // Form
   form: {
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
+    padding: spacing.xl,
+  },
+  inputGroup: {
+    marginBottom: spacing.xl,
   },
   label: {
-    fontSize: 14,
+    ...textStyles.bodySm,
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
     fontWeight: "600",
-    color: "#374151",
-    marginBottom: 8,
   },
   input: {
+    backgroundColor: colors.surfaceLight,
+    borderRadius: radius.md,
+    padding: spacing.lg,
+    ...textStyles.bodyMd,
+    color: colors.textPrimary,
     borderWidth: 1,
-    borderColor: "#d1d5db",
-    borderRadius: 8,
-    padding: 14,
-    fontSize: 16,
-    backgroundColor: "#fff",
-    marginBottom: 16,
+    borderColor: colors.border,
   },
-  button: {
-    marginTop: 8,
+  mainButton: {
+    marginTop: spacing.sm,
   },
+
+  // Host info
   hostInfo: {
-    flexDirection: "row",
-    backgroundColor: "#fef3c7",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    alignItems: "flex-start",
-  },
-  hostInfoIcon: {
-    fontSize: 24,
-    marginRight: 12,
+    backgroundColor: colors.surfaceLight,
+    borderRadius: radius.md,
+    padding: spacing.lg,
+    marginBottom: spacing.xl,
   },
   hostInfoText: {
-    flex: 1,
-    fontSize: 14,
-    color: "#92400e",
-    lineHeight: 20,
+    ...textStyles.bodySm,
+    color: colors.textSecondary,
+    lineHeight: 22,
   },
-  createButton: {
-    marginTop: 8,
-    backgroundColor: "#f59e0b",
-  },
+
+  // Connection hint
   connectionHint: {
+    ...textStyles.bodySm,
     textAlign: "center",
-    color: "#9ca3af",
-    marginTop: 20,
-    fontStyle: "italic",
-  },
-  // PIN input styles
-  pinContainer: {
-    backgroundColor: "#ede9fe",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 2,
-    borderColor: "#8b5cf6",
-  },
-  pinLabel: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#5b21b6",
-    marginBottom: 12,
-    textAlign: "center",
-  },
-  pinInput: {
-    borderWidth: 1,
-    borderColor: "#c4b5fd",
-    borderRadius: 8,
-    padding: 14,
-    fontSize: 20,
-    backgroundColor: "#fff",
-    textAlign: "center",
-    letterSpacing: 8,
-    marginBottom: 12,
-  },
-  pinButtons: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  pinCancelButton: {
-    flex: 1,
-    color: "#000",
-    backgroundColor: "#9ca3af",
-  },
-  pinConfirmButton: {
-    flex: 1,
-    color: "#000",
-    backgroundColor: "#8b5cf6",
+    color: colors.textMuted,
+    marginTop: spacing.xl,
   },
 });

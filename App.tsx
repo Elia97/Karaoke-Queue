@@ -22,7 +22,7 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <KaraokeProvider>
-        <StatusBar style="auto" />
+        <StatusBar hidden />
         <AppNavigator />
       </KaraokeProvider>
     </SafeAreaProvider>

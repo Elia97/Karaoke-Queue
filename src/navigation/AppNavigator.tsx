@@ -31,15 +31,16 @@ export function AppNavigator() {
         initialRouteName="Join"
         screenOptions={{
           headerShown: true,
-          headerTintColor: "#4f46e5",
+          headerTintColor: "#818CF8",
           headerStyle: {
-            backgroundColor: "#fff",
+            backgroundColor: "#18181B",
           },
           headerTitleStyle: {
             fontWeight: "600",
+            color: "#FFFFFF",
           },
           contentStyle: {
-            backgroundColor: "#f9fafb",
+            backgroundColor: "#0F0F11",
           },
         }}
       >
@@ -73,7 +74,7 @@ export function AppNavigator() {
           options={{
             title: "In Riproduzione",
             headerStyle: {
-              backgroundColor: "#1f2937",
+              backgroundColor: "#18181B",
             },
             headerTintColor: "#fff",
           }}

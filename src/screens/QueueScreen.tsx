@@ -33,8 +33,10 @@ import {
   ErrorBanner,
   QueueItemCard,
   PrepareNotification,
+  ScreenContainer,
 } from "../components";
 import { RootStackParamList } from "../types";
+import { colors, spacing, radius, textStyles, layout } from "../theme";
 
 type QueueScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -132,60 +134,71 @@ export function QueueScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <ScreenContainer noPadding>
       <ConnectionStatusBar />
 
+      {/* Header - full width background */}
       <View style={styles.header}>
-        <Text style={styles.title}>Coda Canzoni</Text>
-        <Text style={styles.subtitle}>
-          {isEmpty ? "La coda è vuota" : `${queue.length} canzoni in coda`}
-        </Text>
+        <View style={styles.headerContent}>
+          <Text style={styles.title}>Coda Canzoni</Text>
+          <Text style={styles.subtitle}>
+            {isEmpty ? "La coda è vuota" : `${queue.length} canzoni in coda`}
+          </Text>
+        </View>
       </View>
 
-      <ErrorBanner />
-      <PrepareNotification />
+      {/* Content with max-width */}
+      <View style={styles.contentWrapper}>
+        <View style={styles.content}>
+          <ErrorBanner />
+          <PrepareNotification />
 
-      <FlatList
-        data={queue}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <QueueItemCard
-            item={item}
-            isMyItem={isMyQueueItem(item)}
-            canRemove={canRemoveItem(item)}
-            onRemove={() => handleRemoveSong(item.id, item.title)}
+          <FlatList
+            data={queue}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <QueueItemCard
+                item={item}
+                isMyItem={isMyQueueItem(item)}
+                canRemove={canRemoveItem(item)}
+                onRemove={() => handleRemoveSong(item.id, item.title)}
+              />
+            )}
+            contentContainerStyle={styles.list}
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyIcon}>🎵</Text>
+                <Text style={styles.emptyTitle}>Nessuna canzone in coda</Text>
+                <Text style={styles.emptySubtitle}>
+                  Aggiungi una canzone per iniziare!
+                </Text>
+              </View>
+            }
           />
-        )}
-        contentContainerStyle={styles.list}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>🎵</Text>
-            <Text style={styles.emptyTitle}>Nessuna canzone in coda</Text>
-            <Text style={styles.emptySubtitle}>
-              Aggiungi una canzone per iniziare!
-            </Text>
-          </View>
-        }
-      />
+        </View>
+      </View>
 
-      <View style={styles.actions}>
-        {/* Solo i partecipanti possono aggiungere canzoni */}
-        {!isHost && (
-          <Button
-            title="➕ Aggiungi canzone"
-            onPress={() => setShowSongPicker(true)}
-            style={styles.addButton}
-          />
-        )}
+      {/* Bottom actions - full width background */}
+      <View style={styles.actionsBackground}>
+        <View style={styles.actionsContent}>
+          {/* Solo i partecipanti possono aggiungere canzoni */}
+          {!isHost && (
+            <Button
+              title="➕ Aggiungi canzone"
+              onPress={() => setShowSongPicker(true)}
+              size="large"
+            />
+          )}
 
-        {/* Solo l'host vede i controlli di gestione */}
-        {isHost && !isEmpty && (
-          <Button
-            title={hasCurrentSong ? "⏭️ Prossima" : "▶️ Avvia"}
-            onPress={handleNextSong}
-            style={styles.actionButton}
-          />
-        )}
+          {/* Solo l'host vede i controlli di gestione */}
+          {isHost && !isEmpty && (
+            <Button
+              title={hasCurrentSong ? "⏭️ Prossima canzone" : "▶️ Avvia"}
+              onPress={handleNextSong}
+              size="large"
+            />
+          )}
+        </View>
       </View>
 
       {/* Modal per aggiungere canzone */}
@@ -199,149 +212,164 @@ export function QueueScreen() {
           style={styles.modalOverlay}
           behavior={Platform.OS === "ios" ? "padding" : "height"}
         >
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Aggiungi canzone</Text>
-              <TouchableOpacity
-                onPress={() => setShowSongPicker(false)}
-                style={styles.closeButton}
-              >
-                <Text style={styles.closeText}>✕</Text>
-              </TouchableOpacity>
+          <View style={styles.modalWrapper}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Aggiungi canzone</Text>
+                <TouchableOpacity
+                  onPress={() => setShowSongPicker(false)}
+                  style={styles.closeButton}
+                >
+                  <Text style={styles.closeText}>✕</Text>
+                </TouchableOpacity>
+              </View>
+
+              <Text style={styles.inputLabel}>Titolo della canzone</Text>
+              <TextInput
+                style={styles.textInput}
+                placeholder="es. Bohemian Rhapsody"
+                placeholderTextColor={colors.textMuted}
+                value={songTitle}
+                onChangeText={setSongTitle}
+                autoFocus
+                returnKeyType="done"
+                onSubmitEditing={handleRequestSong}
+              />
+
+              <Button
+                title="Aggiungi alla coda"
+                onPress={handleRequestSong}
+                disabled={!songTitle.trim()}
+                size="large"
+              />
             </View>
-
-            <Text style={styles.inputLabel}>Titolo della canzone</Text>
-            <TextInput
-              style={styles.textInput}
-              placeholder="es. Bohemian Rhapsody"
-              value={songTitle}
-              onChangeText={setSongTitle}
-              autoFocus
-              returnKeyType="done"
-              onSubmitEditing={handleRequestSong}
-            />
-
-            <Button
-              title="Aggiungi alla coda"
-              onPress={handleRequestSong}
-              disabled={!songTitle.trim()}
-              style={styles.submitButton}
-            />
           </View>
         </KeyboardAvoidingView>
       </Modal>
-    </View>
+    </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f9fafb",
-  },
+  // Header - full width background
   header: {
-    padding: 20,
-    backgroundColor: "#fff",
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: "#e5e7eb",
+    borderBottomColor: colors.border,
+  },
+  headerContent: {
+    maxWidth: layout.maxWidth,
+    width: "100%",
+    alignSelf: "center",
+    padding: spacing.xl,
   },
   title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#1f2937",
-    marginBottom: 4,
+    ...textStyles.headingLg,
+    color: colors.textPrimary,
+    marginBottom: spacing.xs,
   },
   subtitle: {
-    fontSize: 14,
-    color: "#6b7280",
+    ...textStyles.bodySm,
+    color: colors.textSecondary,
+  },
+
+  // Content area
+  contentWrapper: {
+    flex: 1,
+    alignItems: "center",
+  },
+  content: {
+    flex: 1,
+    width: "100%",
+    maxWidth: layout.maxWidth,
   },
   list: {
-    paddingVertical: 12,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
     flexGrow: 1,
   },
   emptyContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingVertical: 60,
+    paddingVertical: spacing["4xl"],
   },
-  emptyText: {
-    fontSize: 48,
-    marginBottom: 16,
+  emptyIcon: {
+    fontSize: 64,
+    marginBottom: spacing.lg,
   },
   emptyTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#374151",
-    marginBottom: 8,
+    ...textStyles.headingMd,
+    color: colors.textPrimary,
+    marginBottom: spacing.sm,
   },
   emptySubtitle: {
-    fontSize: 14,
-    color: "#6b7280",
+    ...textStyles.bodyMd,
+    color: colors.textSecondary,
   },
-  actions: {
-    flexDirection: "row",
-    padding: 16,
-    gap: 12,
-    backgroundColor: "#fff",
+
+  // Bottom actions - full width background
+  actionsBackground: {
+    backgroundColor: colors.surface,
     borderTopWidth: 1,
-    borderTopColor: "#e5e7eb",
+    borderTopColor: colors.border,
   },
-  addButton: {
-    flex: 1,
+  actionsContent: {
+    maxWidth: layout.maxWidth,
+    width: "100%",
+    alignSelf: "center",
+    padding: spacing.lg,
   },
-  nextButton: {
-    flex: 0,
-  },
-  actionButton: {
-    flex: 1,
-  },
+
+  // Modal styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: colors.overlay,
     justifyContent: "flex-end",
   },
+  modalWrapper: {
+    maxWidth: layout.maxWidth,
+    width: "100%",
+    alignSelf: "center",
+  },
   modalContent: {
-    backgroundColor: "#fff",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 24,
-    paddingBottom: 40,
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
+    padding: spacing.xl,
+    paddingBottom: spacing["3xl"],
   },
   modalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 24,
+    marginBottom: spacing.xl,
   },
   modalTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#1f2937",
+    ...textStyles.headingMd,
+    color: colors.textPrimary,
   },
   closeButton: {
-    padding: 8,
+    padding: spacing.sm,
   },
   closeText: {
-    fontSize: 20,
-    color: "#6b7280",
+    fontSize: 24,
+    color: colors.textMuted,
   },
   inputLabel: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: "#374151",
-    marginBottom: 8,
+    ...textStyles.bodySm,
+    color: colors.textSecondary,
+    fontWeight: "600",
+    marginBottom: spacing.sm,
   },
   textInput: {
+    backgroundColor: colors.surfaceLight,
     borderWidth: 1,
-    borderColor: "#d1d5db",
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    marginBottom: 20,
-    backgroundColor: "#f9fafb",
-  },
-  submitButton: {
-    marginTop: 8,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    padding: spacing.lg,
+    ...textStyles.bodyMd,
+    color: colors.textPrimary,
+    marginBottom: spacing.xl,
   },
 });
