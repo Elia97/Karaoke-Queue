@@ -4,6 +4,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: "karaoke-expo",
   slug: "karaoke-expo",
+  extra: {
+    eas: {
+      projectId: "a153f8cd-6d2d-472f-bde6-3c00512ee243",
+    },
+  },
   version: "1.0.0",
   orientation: "portrait",
   icon: "./assets/icon.png",
@@ -16,12 +21,17 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   ios: {
     supportsTablet: true,
+    bundleIdentifier: "com.elia97.karaoke",
+    infoPlist: {
+      ITSAppUsesNonExemptEncryption: false,
+    },
   },
   android: {
     adaptiveIcon: {
       foregroundImage: "./assets/adaptive-icon.png",
       backgroundColor: "#0F0F11",
     },
+    package: "com.elia97.karaoke",
     edgeToEdgeEnabled: true,
   },
   web: {

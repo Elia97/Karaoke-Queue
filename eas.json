@@ -1,0 +1,35 @@
+{
+  "cli": {
+    "version": ">= 16.31.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_SOCKET_URL": "http://localhost:3000",
+        "EXPO_PUBLIC_HOST_PIN": "1234"
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "ios": {
+        "simulator": true
+      },
+      "env": {
+        "EXPO_PUBLIC_SOCKET_URL": "https://karaoke-production-cde5.up.railway.app",
+        "EXPO_PUBLIC_HOST_PIN": "1234"
+      }
+    },
+    "production": {
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_SOCKET_URL": "https://karaoke-production-cde5.up.railway.app"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}
