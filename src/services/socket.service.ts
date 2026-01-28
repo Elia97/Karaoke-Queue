@@ -34,8 +34,15 @@ import {
 } from "./storage.service";
 
 // Configurazione server - da esternalizzare in env per produzione
-const SOCKET_URL =
-  process.env.EXPO_PUBLIC_SOCKET_URL || "http://localhost:3000";
+const SOCKET_URL = process.env.EXPO_PUBLIC_SOCKET_URL;
+
+if (!SOCKET_URL) {
+  console.warn(
+    "[SocketService] EXPO_PUBLIC_SOCKET_URL not defined, falling back to localhost",
+  );
+}
+
+const BASE_URL = SOCKET_URL || "http://localhost:3000";
 const SOCKET_NAMESPACE = "/karaoke";
 
 type ConnectionStatusListener = (status: ConnectionStatus) => void;
@@ -69,7 +76,7 @@ class SocketService {
 
     this.setConnectionStatus(ConnectionStatus.CONNECTING);
 
-    this.socket = io(`${SOCKET_URL}${SOCKET_NAMESPACE}`, {
+    this.socket = io(`${BASE_URL}${SOCKET_NAMESPACE}`, {
       transports: ["websocket"],
       autoConnect: true,
       reconnection: true,
