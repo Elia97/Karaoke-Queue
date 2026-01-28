@@ -35,7 +35,7 @@ import {
   PrepareNotification,
   ScreenContainer,
 } from "../components";
-import { RootStackParamList } from "../types";
+import { RootStackParamList, ConnectionStatus } from "../types";
 import { colors, spacing, radius, textStyles, layout } from "../theme";
 
 type QueueScreenNavigationProp = NativeStackNavigationProp<
@@ -46,8 +46,8 @@ type QueueScreenNavigationProp = NativeStackNavigationProp<
 export function QueueScreen() {
   const navigation = useNavigation<QueueScreenNavigationProp>();
   const { queue, isEmpty, isMyQueueItem } = useQueue();
-  const { isHost, sessionEndedReason } = useSession();
-  const { requestSong, removeSong, nextSong } = useSocket();
+  const { isHost, sessionEndedReason, session, sessionId } = useSession();
+  const { requestSong, removeSong, nextSong, connectionStatus } = useSocket();
   const { hasCurrentSong } = useNowPlaying();
 
   const [showSongPicker, setShowSongPicker] = useState(false);
@@ -56,7 +56,6 @@ export function QueueScreen() {
   // Se la sessione è terminata, torna a Join
   useEffect(() => {
     if (sessionEndedReason !== null) {
-      // Su web, Alert.alert non funziona - usa window.alert
       if (typeof window !== "undefined" && window.alert) {
         window.alert(`Sessione terminata: ${sessionEndedReason}`);
         navigation.replace("Join");
@@ -70,6 +69,19 @@ export function QueueScreen() {
       }
     }
   }, [sessionEndedReason, navigation]);
+
+  // Se non siamo più in una sessione e siamo connessi (quindi niente reconnect pending), torna a Join
+  useEffect(() => {
+    const hasLostSession = !session && !sessionId && !sessionEndedReason;
+    const isConnected = connectionStatus === ConnectionStatus.CONNECTED;
+
+    if (hasLostSession && isConnected) {
+      console.log(
+        "[QueueScreen] Sessione persa o non trovata, ritorno alla home",
+      );
+      navigation.replace("Join");
+    }
+  }, [session, sessionId, sessionEndedReason, connectionStatus, navigation]);
 
   const handleRequestSong = () => {
     if (!songTitle.trim()) {

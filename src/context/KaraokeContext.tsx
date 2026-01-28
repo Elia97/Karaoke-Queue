@@ -44,6 +44,9 @@ import {
   SessionEndedPayload,
   SessionPausedPayload,
   SessionResumedPayload,
+  ReconnectedPayload,
+  HostDisconnectedPayload,
+  HostReconnectedPayload,
   SessionStatus,
 } from "../types";
 import { socketService, logger } from "../services";
@@ -69,6 +72,10 @@ export interface KaraokeState {
   prepareNotification: PreparePayload | null;
   lastError: ServerErrorPayload | null;
   sessionEndedReason: string | null;
+  /** Countdown per host disconnesso: timestamp deadline in ms */
+  hostDisconnectDeadline: number | null;
+  /** Messaggio da mostrare durante host disconnect */
+  hostDisconnectMessage: string | null;
 }
 
 const initialState: KaraokeState = {
@@ -83,6 +90,8 @@ const initialState: KaraokeState = {
   prepareNotification: null,
   lastError: null,
   sessionEndedReason: null,
+  hostDisconnectDeadline: null,
+  hostDisconnectMessage: null,
 };
 
 // ============================================================================
@@ -101,6 +110,9 @@ type KaraokeAction =
   | { type: "SESSION_ENDED"; payload: SessionEndedPayload }
   | { type: "SESSION_PAUSED"; payload: SessionPausedPayload }
   | { type: "SESSION_RESUMED"; payload: SessionResumedPayload }
+  | { type: "RECONNECTED"; payload: ReconnectedPayload }
+  | { type: "HOST_DISCONNECTED"; payload: HostDisconnectedPayload }
+  | { type: "HOST_RECONNECTED"; payload: HostReconnectedPayload }
   | { type: "ERROR"; payload: ServerErrorPayload }
   | { type: "CLEAR_ERROR" }
   | { type: "CLEAR_PREPARE_NOTIFICATION" }
@@ -132,11 +144,13 @@ function karaokeReducer(
 
     case "WELCOME":
       // Welcome è il primo evento dopo join riuscito
-      // Contiene SOLO user e sessionId. Lo stato completo arriva con sessionState.
+      // Contiene user, sessionId e reconnectToken. Lo stato completo arriva con sessionState.
       logger.state("WELCOME", {
         user: action.payload.user,
         sessionId: action.payload.sessionId,
       });
+      // Salva il token per riconnessione automatica
+      socketService.setReconnectToken(action.payload.reconnectToken);
       return {
         ...state,
         user: action.payload.user,
@@ -144,6 +158,8 @@ function karaokeReducer(
         lastError: null,
         sessionEndedReason: null,
         prepareNotification: null,
+        hostDisconnectDeadline: null,
+        hostDisconnectMessage: null,
       };
 
     case "SESSION_STATE":
@@ -252,6 +268,48 @@ function karaokeReducer(
       return {
         ...state,
         session: action.payload.session,
+        // Pulisci countdown host disconnect se presente
+        hostDisconnectDeadline: null,
+        hostDisconnectMessage: null,
+      };
+
+    case "RECONNECTED":
+      // Riconnessione riuscita - aggiorna user e salva token
+      logger.state("RECONNECTED", {
+        user: action.payload.user,
+        sessionId: action.payload.sessionId,
+      });
+      // Il token viene salvato in SocketService
+      socketService.onReconnectSuccess(action.payload.reconnectToken);
+      return {
+        ...state,
+        user: action.payload.user,
+        sessionId: action.payload.sessionId,
+        lastError: null,
+        hostDisconnectDeadline: null,
+        hostDisconnectMessage: null,
+      };
+
+    case "HOST_DISCONNECTED":
+      // L'host si è disconnesso - mostra countdown
+      logger.state("HOST_DISCONNECTED", action.payload);
+      return {
+        ...state,
+        hostDisconnectDeadline: action.payload.reconnectDeadlineMs,
+        hostDisconnectMessage: action.payload.message,
+        // La sessione va in pausa
+        session: state.session
+          ? { ...state.session, status: SessionStatus.PAUSED }
+          : null,
+      };
+
+    case "HOST_RECONNECTED":
+      // L'host si è riconnesso - pulisci countdown
+      logger.state("HOST_RECONNECTED", action.payload);
+      return {
+        ...state,
+        hostDisconnectDeadline: null,
+        hostDisconnectMessage: null,
       };
 
     case "ERROR":
@@ -327,11 +385,7 @@ export function KaraokeProvider({ children }: KaraokeProviderProps) {
 
   // Setup listener per eventi server
   useEffect(() => {
-    // Registra listeners solo quando connesso
-    if (state.connectionStatus !== ConnectionStatus.CONNECTED) {
-      return;
-    }
-
+    // Registra listeners se il socket è inizializzato, anche se sta connettendo
     let socket: ReturnType<typeof socketService.getSocket> | null = null;
 
     try {
@@ -341,6 +395,12 @@ export function KaraokeProvider({ children }: KaraokeProviderProps) {
       logger.debug("socket", "Socket not ready yet");
       return;
     }
+
+    // Evita registrazioni multiple se non cambia nulla
+    // (useEffect ha dipendenza state.connectionStatus, ma socket instance è stabile)
+
+    // NOTA: rimuoviamo il check su ConnectionStatus.CONNECTED per catturare eventi
+    // che potrebbero arrivare immediatamente dopo la connessione (es. reconnected)
 
     logger.debug("socket", "Registering event listeners...");
 
@@ -412,6 +472,8 @@ export function KaraokeProvider({ children }: KaraokeProviderProps) {
 
     socket.on("sessionEnded", (payload) => {
       logger.socketIn("sessionEnded", payload);
+      // Pulisci token perché la sessione è finita volontariamente
+      socketService.onReconnectFailed();
       dispatch({ type: "SESSION_ENDED", payload });
     });
 
@@ -429,8 +491,49 @@ export function KaraokeProvider({ children }: KaraokeProviderProps) {
       dispatch({ type: "SESSION_RESUMED", payload: parsedPayload });
     });
 
+    // Reconnect events
+    socket.on("reconnected", (payload: any) => {
+      logger.socketIn("reconnected", payload);
+      const parsedPayload: ReconnectedPayload = {
+        ...payload,
+        user: parseUser(payload.user),
+      };
+      dispatch({ type: "RECONNECTED", payload: parsedPayload });
+    });
+
+    socket.on("hostDisconnected", (payload: HostDisconnectedPayload) => {
+      logger.socketIn("hostDisconnected", payload);
+      dispatch({ type: "HOST_DISCONNECTED", payload });
+    });
+
+    socket.on("hostReconnected", (payload: HostReconnectedPayload) => {
+      logger.socketIn("hostReconnected", payload);
+      dispatch({ type: "HOST_RECONNECTED", payload });
+    });
+
     socket.on("error", (payload) => {
-      logger.socketIn("error", payload);
+      logger.error("socket", "Socket error", payload);
+
+      // Gestione errori critici di riconnessione
+      if (
+        payload.code === "INVALID_RECONNECT_TOKEN" ||
+        payload.code === "RECONNECT_TOKEN_EXPIRED" ||
+        payload.code === "SESSION_EXPIRED" ||
+        payload.code === "USER_NOT_FOUND" // Aggiunto per gestire caso utente scaduto
+      ) {
+        logger.error(
+          "socket",
+          "Critical reconnect error - clearing session",
+          payload.code,
+        );
+        socketService.onReconnectFailed();
+        // Resetta lo stato della sessione ma mantieni i messaggi di errore
+        // Questo attiverà il redirect alla JoinScreen (vedi useEffect nei vari screen)
+        dispatch({ type: "RESET" });
+        // Nota: RESET imposta connectionStatus a DISCONNECTED, ma va bene perché
+        // forziamo l'utente a ricominciare.
+      }
+
       dispatch({ type: "ERROR", payload });
     });
 
@@ -447,6 +550,9 @@ export function KaraokeProvider({ children }: KaraokeProviderProps) {
       socket?.off("sessionEnded");
       socket?.off("sessionPaused");
       socket?.off("sessionResumed");
+      socket?.off("reconnected");
+      socket?.off("hostDisconnected");
+      socket?.off("hostReconnected");
       socket?.off("error");
     };
   }, [state.connectionStatus]); // Re-registra quando la connessione cambia

@@ -17,12 +17,14 @@ import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { KaraokeProvider } from "./src/context";
 import { AppNavigator } from "./src/navigation";
+import { HostDisconnectBanner } from "./src/components";
 
 export default function App() {
   return (
     <SafeAreaProvider>
       <KaraokeProvider>
         <StatusBar hidden />
+        <HostDisconnectBanner />
         <AppNavigator />
       </KaraokeProvider>
     </SafeAreaProvider>

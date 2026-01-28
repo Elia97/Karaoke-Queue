@@ -25,7 +25,13 @@ import {
   ConnectionStatus,
   JoinCommand,
   RequestSongCommand,
+  ReconnectCommand,
 } from "../types";
+import {
+  getReconnectToken,
+  saveReconnectToken,
+  clearReconnectToken,
+} from "./storage.service";
 
 // Configurazione server - da esternalizzare in env per produzione
 const SOCKET_URL =
@@ -38,6 +44,10 @@ class SocketService {
   private socket: KaraokeSocket | null = null;
   private connectionStatus: ConnectionStatus = ConnectionStatus.DISCONNECTED;
   private statusListeners: Set<ConnectionStatusListener> = new Set();
+  /** Token di riconnessione memorizzato in memoria */
+  private reconnectToken: string | null = null;
+  /** Flag per evitare doppi tentativi di reconnect */
+  private reconnectAttemptInProgress = false;
 
   /**
    * Inizializza la connessione socket.
@@ -82,8 +92,10 @@ class SocketService {
     if (!this.socket) return;
 
     this.socket.on("connect", () => {
-      console.log("[SocketService] Connected");
+      console.log("[SocketService] Connected", this.socket?.id);
       this.setConnectionStatus(ConnectionStatus.CONNECTED);
+      // Tenta riconnessione applicativa anche al primo connect (es. refresh)
+      this.attemptAppReconnect();
     });
 
     this.socket.on("disconnect", (reason) => {
@@ -112,13 +124,34 @@ class SocketService {
     this.socket.io.on("reconnect", () => {
       console.log("[SocketService] Reconnected");
       this.setConnectionStatus(ConnectionStatus.CONNECTED);
-      // NOTA: Non emettiamo join qui.
-      // Il server dovrebbe inviare sessionState se il client era in sessione.
+      // Tenta riconnessione applicativa con token
+      this.attemptAppReconnect();
     });
 
     this.socket.io.on("reconnect_failed", () => {
       console.log("[SocketService] Reconnect failed");
       this.setConnectionStatus(ConnectionStatus.DISCONNECTED);
+      this.onReconnectFailed();
+    });
+
+    // Handle application-level errors
+    this.socket.on("error", (payload: any) => {
+      console.warn("[SocketService] Application error:", payload);
+
+      const terminalErrors = [
+        "RECONNECT_TOKEN_EXPIRED",
+        "INVALID_RECONNECT_TOKEN",
+        "SESSION_ENDED",
+        "USER_ALREADY_CONNECTED",
+        "SESSION_EXPIRED",
+      ];
+
+      if (payload && terminalErrors.includes(payload.code)) {
+        console.log(
+          "[SocketService] Terminal error received, forcing disconnect",
+        );
+        this.disconnect();
+      }
     });
   }
 
@@ -132,7 +165,72 @@ class SocketService {
       this.socket.disconnect();
       this.socket = null;
     }
+    // Pulisci token e stato
+    this.reconnectToken = null;
+    this.reconnectAttemptInProgress = false;
+    clearReconnectToken();
     this.setConnectionStatus(ConnectionStatus.DISCONNECTED);
+  }
+
+  /**
+   * Tenta riconnessione applicativa usando il token salvato.
+   * Chiamato automaticamente dopo un reconnect socket.io.
+   */
+  private async attemptAppReconnect(): Promise<void> {
+    if (this.reconnectAttemptInProgress) {
+      console.log("[SocketService] Reconnect already in progress, skipping");
+      return;
+    }
+
+    // Prima prova con token in memoria, poi cerca in storage
+    let token = this.reconnectToken;
+    if (!token) {
+      token = await getReconnectToken();
+    }
+
+    if (!token) {
+      console.log("[SocketService] No reconnect token available");
+      return;
+    }
+
+    console.log("[SocketService] Attempting app-level reconnect");
+    this.reconnectAttemptInProgress = true;
+
+    try {
+      this.reconnect({ reconnectToken: token });
+    } catch (error) {
+      console.error("[SocketService] Reconnect attempt failed:", error);
+    }
+  }
+
+  /**
+   * Chiamato quando il server conferma la riconnessione.
+   * Aggiorna il token salvato con quello nuovo.
+   */
+  onReconnectSuccess(newToken: string): void {
+    console.log("[SocketService] Reconnect successful, updating token");
+    this.reconnectToken = newToken;
+    this.reconnectAttemptInProgress = false;
+    saveReconnectToken(newToken);
+  }
+
+  /**
+   * Chiamato quando la riconnessione fallisce.
+   * Pulisce il token per forzare nuovo join.
+   */
+  onReconnectFailed(): void {
+    console.log("[SocketService] Reconnect failed, clearing token");
+    this.reconnectToken = null;
+    this.reconnectAttemptInProgress = false;
+    clearReconnectToken();
+  }
+
+  /**
+   * Salva il token di riconnessione (chiamato dopo welcome).
+   */
+  setReconnectToken(token: string): void {
+    this.reconnectToken = token;
+    saveReconnectToken(token);
   }
 
   /**
@@ -227,6 +325,13 @@ class SocketService {
    */
   resumeSession(): void {
     this.getSocket().emit("resumeSession");
+  }
+
+  /**
+   * Emette comando reconnect per tentare riconnessione con token.
+   */
+  reconnect(payload: ReconnectCommand): void {
+    this.getSocket().emit("reconnect", payload);
   }
 
   /**

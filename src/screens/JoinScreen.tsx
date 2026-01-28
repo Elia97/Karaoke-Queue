@@ -34,6 +34,7 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSocket, useSession, useError } from "../hooks";
 import { useKaraokeContext } from "../context";
 import { Button, ConnectionStatusBar, ErrorBanner } from "../components";
+import { getReconnectToken } from "../services/storage.service";
 import { RootStackParamList, ConnectionStatus } from "../types";
 import { colors, spacing, radius, textStyles, layout } from "../theme";
 
@@ -56,6 +57,21 @@ export function JoinScreen() {
   const [isHostUnlocked, setIsHostUnlocked] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [isRecoveringSession, setIsRecoveringSession] = useState(false);
+
+  // Check valid token on mount for UX feedback
+  useEffect(() => {
+    async function checkToken() {
+      const token = await getReconnectToken();
+      if (token) {
+        console.log(
+          "[JoinScreen] Found reconnect token, waiting for recovery...",
+        );
+        setIsRecoveringSession(true);
+      }
+    }
+    checkToken();
+  }, []);
 
   // Secret PIN input for mobile
   const [showPinInput, setShowPinInput] = useState(false);
@@ -145,8 +161,16 @@ export function JoinScreen() {
     if (hasError) {
       setIsJoining(false);
       setIsCreating(false);
+      setIsRecoveringSession(false);
     }
   }, [hasError]);
+
+  // Se disconnesso, stop recovery
+  useEffect(() => {
+    if (connectionStatus === ConnectionStatus.DISCONNECTED) {
+      setIsRecoveringSession(false);
+    }
+  }, [connectionStatus]);
 
   const handleJoinSession = () => {
     if (!nickname.trim() || !sessionCode.trim() || !isConnected) return;
@@ -190,6 +214,21 @@ export function JoinScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.contentWrapper}>
+          {isRecoveringSession && (
+            <View style={styles.recoveryOverlay}>
+              <Text style={styles.recoveryText}>
+                Recupero sessione in corso...
+              </Text>
+              <Button
+                title="Annulla"
+                variant="secondary"
+                size="small"
+                onPress={() => setIsRecoveringSession(false)}
+                style={{ marginTop: spacing.md }}
+              />
+            </View>
+          )}
+
           {/* Header */}
           <View style={styles.header}>
             <TouchableOpacity onPress={handleSecretTap} activeOpacity={0.9}>
@@ -493,5 +532,19 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: colors.textMuted,
     marginTop: spacing.xl,
+  },
+  recoveryOverlay: {
+    padding: spacing.xl,
+    backgroundColor: colors.surfaceLight,
+    borderRadius: radius.lg,
+    alignItems: "center",
+    marginBottom: spacing.xl,
+    borderWidth: 1,
+    borderColor: colors.primary,
+  },
+  recoveryText: {
+    ...textStyles.bodyMd,
+    color: colors.textPrimary,
+    fontWeight: "bold",
   },
 });

@@ -37,6 +37,7 @@ export const colors = {
   errorSurface: "#1F1315",
   warning: "#F59E0B",
   warningLight: "#FBBF24",
+  warningDark: "#D97706",
   warningSurface: "#1F1A15",
 
   // Borders

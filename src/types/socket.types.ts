@@ -102,6 +102,7 @@ interface BaseEventPayload {
 export interface WelcomePayload extends BaseEventPayload {
   user: User;
   sessionId: string;
+  reconnectToken: string;
 }
 
 /**
@@ -191,6 +192,31 @@ export interface SessionResumedPayload extends BaseEventPayload {
 }
 
 /**
+ * Evento "reconnected" - utente riconnesso con successo.
+ */
+export interface ReconnectedPayload extends BaseEventPayload {
+  user: User;
+  sessionId: string;
+  reconnectToken: string;
+}
+
+/**
+ * Evento "hostDisconnected" - host disconnesso, sessione in pausa con countdown.
+ */
+export interface HostDisconnectedPayload extends BaseEventPayload {
+  reconnectDeadlineMs: number;
+  reconnectWindowSeconds: number;
+  message: string;
+}
+
+/**
+ * Evento "hostReconnected" - host si è riconnesso.
+ */
+export interface HostReconnectedPayload extends BaseEventPayload {
+  message: string;
+}
+
+/**
  * Mappa eventi server → payload
  */
 export interface ServerToClientEvents {
@@ -204,6 +230,9 @@ export interface ServerToClientEvents {
   sessionEnded: (payload: SessionEndedPayload) => void;
   sessionPaused: (payload: SessionPausedPayload) => void;
   sessionResumed: (payload: SessionResumedPayload) => void;
+  reconnected: (payload: ReconnectedPayload) => void;
+  hostDisconnected: (payload: HostDisconnectedPayload) => void;
+  hostReconnected: (payload: HostReconnectedPayload) => void;
   error: (payload: ServerErrorPayload) => void;
 }
 
@@ -230,6 +259,13 @@ export interface RemoveSongCommand {
 }
 
 /**
+ * Comando reconnect - riconnessione usando token salvato.
+ */
+export interface ReconnectCommand {
+  reconnectToken: string;
+}
+
+/**
  * Mappa comandi client → payload
  * NOTA: Alcuni comandi potrebbero non essere implementati nel backend.
  * Il client li emette comunque - il server ignorerà quelli non supportati.
@@ -238,6 +274,7 @@ export interface ClientToServerEvents {
   join: (payload: JoinCommand) => void;
   requestSong: (payload: RequestSongCommand) => void;
   removeSong: (payload: RemoveSongCommand) => void;
+  reconnect: (payload: ReconnectCommand) => void;
   nextSong: () => void;
   pauseSession: () => void;
   resumeSession: () => void;

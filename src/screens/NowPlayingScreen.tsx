@@ -22,7 +22,7 @@ import {
   PrepareNotification,
   ScreenContainer,
 } from "../components";
-import { RootStackParamList } from "../types";
+import { RootStackParamList, ConnectionStatus } from "../types";
 import { colors, spacing, radius, textStyles, layout } from "../theme";
 
 type NowPlayingScreenNavigationProp = NativeStackNavigationProp<
@@ -34,8 +34,8 @@ export function NowPlayingScreen() {
   const navigation = useNavigation<NowPlayingScreenNavigationProp>();
   const { currentSong, hasCurrentSong, currentPerformer, isMyTurn, nextUp } =
     useNowPlaying();
-  const { isHost, sessionEndedReason } = useSession();
-  const { nextSong } = useSocket();
+  const { isHost, sessionEndedReason, session, sessionId } = useSession();
+  const { nextSong, connectionStatus } = useSocket();
 
   // Se la sessione è terminata, torna a Join
   useEffect(() => {
@@ -48,6 +48,19 @@ export function NowPlayingScreen() {
       ]);
     }
   }, [sessionEndedReason, navigation]);
+
+  // Se non siamo più in una sessione e siamo connessi (quindi niente reconnect pending), torna a Join
+  useEffect(() => {
+    const hasLostSession = !session && !sessionId && !sessionEndedReason;
+    const isConnected = connectionStatus === ConnectionStatus.CONNECTED;
+
+    if (hasLostSession && isConnected) {
+      console.log(
+        "[NowPlayingScreen] Sessione persa o non trovata, ritorno alla home",
+      );
+      navigation.replace("Join");
+    }
+  }, [session, sessionId, sessionEndedReason, connectionStatus, navigation]);
 
   const handleSkip = () => {
     Alert.alert("Salta canzone", "Vuoi saltare alla prossima canzone?", [

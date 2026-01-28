@@ -68,14 +68,16 @@ export function LobbyScreen() {
     }
   }, [sessionEndedReason, navigation]);
 
-  // Se non siamo più in una sessione (stato perso o disconnessione), torna a Join
+  // Se non siamo più in una sessione e siamo connessi (quindi niente reconnect pending), torna a Join
   useEffect(() => {
     const hasLostSession = !session && !sessionId && !sessionEndedReason;
-    const isDisconnected = connectionStatus === ConnectionStatus.DISCONNECTED;
+    const isConnected = connectionStatus === ConnectionStatus.CONNECTED;
 
-    if (hasLostSession || isDisconnected) {
+    // Redirect solo se siamo connessi ma senza sessione (es. refresh senza token valido)
+    // Se siamo disconnessi o in reconnection, aspettiamo (potrebbe essere un refresh con token)
+    if (hasLostSession && isConnected) {
       console.log(
-        "[LobbyScreen] Lost session or disconnected, navigating to Join",
+        "[LobbyScreen] Sessione persa o non trovata, ritorno alla home",
       );
       navigation.replace("Join");
     }
