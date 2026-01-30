@@ -2,8 +2,8 @@ import { ExpoConfig, ConfigContext } from "expo/config";
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
-  name: "karaoke-expo",
-  slug: "karaoke-expo",
+  name: "Karaoke Queue",
+  slug: "karaoke-queue",
   extra: {
     eas: {
       projectId: "a153f8cd-6d2d-472f-bde6-3c00512ee243",

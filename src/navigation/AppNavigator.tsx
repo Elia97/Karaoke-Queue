@@ -19,14 +19,38 @@ import {
   LobbyScreen,
   QueueScreen,
   NowPlayingScreen,
+  PrivacyPolicyScreen,
 } from "../screens";
 import { RootStackParamList } from "../types";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
+const linking = {
+  prefixes: ["karaoke-queue://", "https://karaoke-queue.vercel.app"],
+  config: {
+    screens: {
+      Join: "",
+      Lobby: "lobby",
+      Queue: "queue",
+      NowPlaying: "playing",
+      Privacy: {
+        path: "privacy",
+        // Supporta anche /privacy-policy
+        parse: {
+          privacy: (path: string) => path,
+        },
+      },
+    },
+  },
+};
+
+// Aggiungiamo un alias per /privacy-policy nel linking se necessario,
+// o usiamo un array di path se il router lo supporta (Expo Router sì, React Navigation richiede configurazione specifica)
+// Per semplicità e stabilità usiamo "privacy" come path principale.
+
 export function AppNavigator() {
   return (
-    <NavigationContainer>
+    <NavigationContainer linking={linking}>
       <Stack.Navigator
         initialRouteName="Join"
         screenOptions={{
@@ -77,6 +101,14 @@ export function AppNavigator() {
               backgroundColor: "#18181B",
             },
             headerTintColor: "#fff",
+          }}
+        />
+        <Stack.Screen
+          name="Privacy"
+          component={PrivacyPolicyScreen}
+          options={{
+            title: "Privacy Policy",
+            headerShown: true,
           }}
         />
       </Stack.Navigator>

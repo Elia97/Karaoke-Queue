@@ -8,6 +8,7 @@ export type RootStackParamList = {
   Lobby: undefined;
   Queue: undefined;
   NowPlaying: undefined;
+  Privacy: undefined;
 };
 
 declare global {
