@@ -26,7 +26,11 @@ import { RootStackParamList } from "../types";
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const linking = {
-  prefixes: ["karaoke-queue://", "https://karaoke-queue.vercel.app"],
+  prefixes: [
+    "karaoke-queue://",
+    "https://karaoke-queue-nine.vercel.app",
+    "https://karaoke-queue.app",
+  ],
   config: {
     screens: {
       Join: "",
